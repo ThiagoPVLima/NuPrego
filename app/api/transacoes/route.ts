@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const tipo = searchParams.get('tipo');
   const busca = searchParams.get('busca');
   const meio = searchParams.get('meio');
+  const categoria_id = searchParams.get('categoria_id');
 
   let query = supabase
     .from('transacoes')
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
   if (tipo) query = query.eq('tipo', tipo);
   if (busca) query = query.ilike('descricao', `%${busca}%`);
   if (meio) query = query.eq('meio_pagamento', meio);
+  if (categoria_id) query = query.contains('categoria_ids', [parseInt(categoria_id)]);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -34,7 +36,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, data, tipo, cartao_id, categoria_id, total_parcelas, meio_pagamento } = body;
+  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento } = body;
+  const catIds: number[] = Array.isArray(categoria_ids) ? categoria_ids : [];
+  const catId = catIds[0] ?? null;
 
   if (tipo === 'parcelada' && total_parcelas > 1) {
     const grupo = randomUUID();
@@ -51,7 +55,8 @@ export async function POST(req: NextRequest) {
         data: d.toISOString().split('T')[0],
         tipo,
         cartao_id: cartao_id || null,
-        categoria_id: categoria_id || null,
+        categoria_id: catId,
+        categoria_ids: catIds,
         meio_pagamento: meio_pagamento || null,
         parcela_atual: i, total_parcelas, grupo_parcela: grupo,
       });
@@ -64,7 +69,8 @@ export async function POST(req: NextRequest) {
   const { data: row, error } = await supabase.from('transacoes').insert({
     descricao, valor, data, tipo,
     cartao_id: cartao_id || null,
-    categoria_id: categoria_id || null,
+    categoria_id: catId,
+    categoria_ids: catIds,
     meio_pagamento: meio_pagamento || null,
     parcela_atual: 1, total_parcelas: 1,
   }).select().single();

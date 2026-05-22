@@ -16,13 +16,26 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  const numId = parseInt(id);
 
-  // Desvincula transações antes de deletar (evita violação de FK)
-  const { error: unlinkErr } = await supabase
+  // Remove da lista de categoria_ids em todas as transações
+  const { data: txs } = await supabase
     .from('transacoes')
-    .update({ categoria_id: null })
-    .eq('categoria_id', id);
-  if (unlinkErr) return NextResponse.json({ error: unlinkErr.message }, { status: 500 });
+    .select('id, categoria_ids')
+    .contains('categoria_ids', [numId]);
+
+  if (txs?.length) {
+    for (const tx of txs) {
+      const novosIds = (tx.categoria_ids as number[]).filter((x: number) => x !== numId);
+      await supabase.from('transacoes').update({
+        categoria_ids: novosIds,
+        categoria_id: novosIds[0] ?? null,
+      }).eq('id', tx.id);
+    }
+  }
+
+  // Desvincula categoria_id legado
+  await supabase.from('transacoes').update({ categoria_id: null }).eq('categoria_id', numId);
 
   const { error } = await supabase.from('categorias').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

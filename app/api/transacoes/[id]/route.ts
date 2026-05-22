@@ -7,6 +7,9 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   const { searchParams } = new URL(req.url);
   const grupo = searchParams.get('grupo');
 
+  const catIds: number[] = Array.isArray(body.categoria_ids) ? body.categoria_ids : [];
+  const catId = catIds[0] ?? null;
+
   if (grupo) {
     const { data: rows, error: fetchError } = await supabase
       .from('transacoes')
@@ -22,7 +25,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       .update({
         valor: body.valor,
         cartao_id: body.cartao_id || null,
-        categoria_id: body.categoria_id || null,
+        categoria_id: catId,
+        categoria_ids: catIds,
         meio_pagamento: body.meio_pagamento || null,
       })
       .eq('grupo_parcela', grupo);
@@ -49,7 +53,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     data: body.data,
     tipo: body.tipo,
     cartao_id: body.cartao_id || null,
-    categoria_id: body.categoria_id || null,
+    categoria_id: catId,
+    categoria_ids: catIds,
     meio_pagamento: body.meio_pagamento || null,
   }).eq('id', id);
 

@@ -1,5 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 type Categoria = { id: number; nome: string; icone: string | null; cor: string };
 
@@ -29,6 +31,7 @@ export default function Configuracoes() {
   const [salvando, setSalvando] = useState(false);
   const [erroCat, setErroCat] = useState<string | null>(null);
   const [deletando, setDeletando] = useState<number | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const loadCats = useCallback(async () => {
     setLoadingCats(true);
@@ -44,6 +47,7 @@ export default function Configuracoes() {
     setEditando(null);
     setForm(formVazio);
     setErroCat(null);
+    setShowEmojiPicker(false);
     setShowModal(true);
   };
 
@@ -51,6 +55,7 @@ export default function Configuracoes() {
     setEditando(c);
     setForm({ nome: c.nome, icone: c.icone || '', cor: c.cor || '#8083ff' });
     setErroCat(null);
+    setShowEmojiPicker(false);
     setShowModal(true);
   };
 
@@ -259,12 +264,36 @@ export default function Configuracoes() {
 
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>ÍCONE (emoji opcional)</label>
-                <input
-                  value={form.icone}
-                  onChange={e => setForm({ ...form, icone: e.target.value })}
-                  placeholder="Ex: 🍔"
-                  style={{ maxWidth: '120px' }}
-                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    value={form.icone}
+                    onChange={e => setForm({ ...form, icone: e.target.value })}
+                    placeholder="Ex: 🍔"
+                    style={{ maxWidth: '90px', fontSize: '20px', textAlign: 'center' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowEmojiPicker(v => !v)}
+                    style={{ fontSize: '13px', padding: '8px 14px' }}
+                  >
+                    {showEmojiPicker ? 'Fechar' : '😊 Escolher'}
+                  </button>
+                  {form.icone && (
+                    <button type="button" className="btn-ghost" onClick={() => setForm({ ...form, icone: '' })} style={{ color: 'var(--outline)', fontSize: '13px' }}>✕</button>
+                  )}
+                </div>
+                {showEmojiPicker && (
+                  <div style={{ marginTop: '8px', position: 'relative', zIndex: 10 }}>
+                    <EmojiPicker
+                      onEmojiClick={data => { setForm(f => ({ ...f, icone: data.emoji })); setShowEmojiPicker(false); }}
+                      skinTonesDisabled
+                      searchPlaceholder="Buscar emoji..."
+                      width="100%"
+                      height={340}
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

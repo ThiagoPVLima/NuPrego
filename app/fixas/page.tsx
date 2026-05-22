@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import CatMultiSelect from '@/components/CatMultiSelect';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -23,6 +24,7 @@ type Fixa = {
   ativa: boolean;
   cartaoId: number | null;
   categoriaId: number | null;
+  categoriaIds: number[];
   meioP: string | null;
   id: number;
 };
@@ -45,7 +47,7 @@ export default function Fixas() {
   const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<Fixa | null>(null);
-  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_id: '', meio: 'cartao' });
+  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao' });
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
@@ -78,6 +80,7 @@ export default function Fixas() {
         ativa: false,
         cartaoId: t.cartao_id,
         categoriaId: t.categoria_id,
+        categoriaIds: Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []),
         meioP: t.meio_pagamento,
         id: t.id,
       };
@@ -136,8 +139,8 @@ export default function Fixas() {
       descricao: g.descricao,
       valor: String(g.valorAtual),
       cartao_id: String(g.cartaoId || ''),
-      categoria_id: String(g.categoriaId || ''),
-      meio: g.meioP || (g.cartaoId ? 'cartao' : 'cartao'),
+      categoria_ids: g.categoriaIds ?? (g.categoriaId ? [g.categoriaId] : []),
+      meio: g.meioP || 'cartao',
     });
     setShowModal(true);
   };
@@ -154,7 +157,7 @@ export default function Fixas() {
           descricao: form.descricao,
           valor: parseFloat(form.valor.replace(',', '.')),
           cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
-          categoria_id: form.categoria_id ? parseInt(form.categoria_id) : null,
+          categoria_ids: form.categoria_ids,
           meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
         }),
       });
@@ -373,11 +376,8 @@ export default function Fixas() {
                 </div>
               )}
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CATEGORIA</label>
-                <select aria-label="Categoria" value={form.categoria_id} onChange={e => setForm({ ...form, categoria_id: e.target.value })}>
-                  <option value="">Sem categoria</option>
-                  {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
+                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '8px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CATEGORIAS</label>
+                <CatMultiSelect value={form.categoria_ids} onChange={ids => setForm({ ...form, categoria_ids: ids })} categorias={categorias} />
               </div>
               {erroSalvar && (
                 <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>

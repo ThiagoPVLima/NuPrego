@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import CatMultiSelect from '@/components/CatMultiSelect';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -23,7 +24,7 @@ export default function Transacoes() {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [form, setForm] = useState({
     descricao: '', valor: '', data: now.toISOString().split('T')[0],
-    tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_id: '', total_parcelas: '1',
+    tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [] as number[], total_parcelas: '1',
   });
 
   const mesStr = `${ano}-${String(mes).padStart(2, '0')}`;
@@ -56,13 +57,16 @@ export default function Transacoes() {
 
   const abrirNova = () => {
     setEditando(null);
-    setForm({ descricao: '', valor: '', data: now.toISOString().split('T')[0], tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_id: '', total_parcelas: '1' });
+    setForm({ descricao: '', valor: '', data: now.toISOString().split('T')[0], tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [], total_parcelas: '1' });
     setShowModal(true);
   };
 
   const abrirEditar = (t: any) => {
     setEditando(t);
     const meio = t.meio_pagamento || 'cartao';
+    const catIds = Array.isArray(t.categoria_ids) && t.categoria_ids.length
+      ? t.categoria_ids
+      : (t.categoria_id ? [t.categoria_id] : []);
     setForm({
       descricao: t.descricao,
       valor: String(t.valor),
@@ -70,7 +74,7 @@ export default function Transacoes() {
       tipo: t.tipo,
       meio,
       cartao_id: String(t.cartao_id || ''),
-      categoria_id: String(t.categoria_id || ''),
+      categoria_ids: catIds,
       total_parcelas: String(t.total_parcelas || 1),
     });
     setShowModal(true);
@@ -83,7 +87,7 @@ export default function Transacoes() {
       data: form.data,
       tipo: form.tipo,
       cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
-      categoria_id: form.categoria_id ? parseInt(form.categoria_id) : null,
+      categoria_ids: form.categoria_ids,
       total_parcelas: parseInt(form.total_parcelas),
       meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
     };
@@ -160,7 +164,19 @@ export default function Transacoes() {
             <div key={t.id} className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 110px 90px', cursor: 'pointer' }} onClick={() => abrirEditar(t)}>
               <div>
                 <div style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</div>
-                {t.categorias && <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px' }}>{t.categorias.nome}</div>}
+                {(() => {
+                  const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+                  const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
+                  return cats.length > 0 ? (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
+                      {cats.map((c: any) => (
+                        <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
+                          {c.icone ? `${c.icone} ` : ''}{c.nome}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
               <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
               <div>
@@ -253,11 +269,8 @@ export default function Transacoes() {
               )}
 
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CATEGORIA</label>
-                <select aria-label="Categoria" value={form.categoria_id} onChange={e => setForm({ ...form, categoria_id: e.target.value })}>
-                  <option value="">Sem categoria</option>
-                  {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
+                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '8px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CATEGORIAS</label>
+                <CatMultiSelect value={form.categoria_ids} onChange={ids => setForm({ ...form, categoria_ids: ids })} categorias={categorias} />
               </div>
 
               {/* Pix/Dinheiro badge */}
