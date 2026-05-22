@@ -46,6 +46,8 @@ export default function Fixas() {
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<Fixa | null>(null);
   const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_id: '', meio: 'cartao' });
+  const [salvando, setSalvando] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +65,7 @@ export default function Fixas() {
   useEffect(() => { load(); }, [load]);
 
   const grupos: Record<string, Fixa> = txs.reduce((acc, t) => {
-    const key = `${t.descricao}__${t.cartao_id ?? 'null'}`;
+    const key = t.descricao;
     if (!acc[key]) {
       acc[key] = {
         key,
@@ -142,19 +144,29 @@ export default function Fixas() {
 
   const salvar = async () => {
     if (!editando) return;
-    await fetch(`/api/transacoes/${editando.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        descricao: form.descricao,
-        valor: parseFloat(form.valor.replace(',', '.')),
-        cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
-        categoria_id: form.categoria_id ? parseInt(form.categoria_id) : null,
-        meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
-      }),
-    });
-    setShowModal(false);
-    load();
+    setSalvando(true);
+    setErroSalvar(null);
+    try {
+      const r = await fetch(`/api/transacoes/${editando.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          descricao: form.descricao,
+          valor: parseFloat(form.valor.replace(',', '.')),
+          cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
+          categoria_id: form.categoria_id ? parseInt(form.categoria_id) : null,
+          meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
+        }),
+      });
+      const json = await r.json();
+      if (!r.ok) { setErroSalvar(json.error || 'Erro ao salvar'); return; }
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro de conexão');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const filtroOpts: { key: Filtro; label: string }[] = [
@@ -367,9 +379,14 @@ export default function Fixas() {
                   {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
+              {erroSalvar && (
+                <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>
+                  ❌ {erroSalvar}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} style={{ flex: 1, justifyContent: 'center' }}>Salvar</button>
+                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : 'Salvar'}</button>
               </div>
             </div>
           </div>

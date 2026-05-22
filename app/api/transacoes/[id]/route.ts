@@ -10,23 +10,36 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   if (grupo) {
     const { data: rows, error: fetchError } = await supabase
       .from('transacoes')
-      .select('id, parcela_atual, total_parcelas')
+      .select('id, descricao, parcela_atual, total_parcelas')
       .eq('grupo_parcela', grupo);
 
     if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
     if (!rows?.length) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
-    const updates = rows.map((r) => ({
-      id: r.id,
-      descricao: `${body.descricao} ${r.parcela_atual}/${r.total_parcelas}`,
-      valor: body.valor,
-      cartao_id: body.cartao_id || null,
-      categoria_id: body.categoria_id || null,
-      meio_pagamento: body.meio_pagamento || null,
-    }));
+    // Atualiza campos compartilhados de uma vez (evita upsert com ID serial)
+    const { error: sharedErr } = await supabase
+      .from('transacoes')
+      .update({
+        valor: body.valor,
+        cartao_id: body.cartao_id || null,
+        categoria_id: body.categoria_id || null,
+        meio_pagamento: body.meio_pagamento || null,
+      })
+      .eq('grupo_parcela', grupo);
+    if (sharedErr) return NextResponse.json({ error: sharedErr.message }, { status: 500 });
 
-    const { error } = await supabase.from('transacoes').upsert(updates);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Atualiza descrição individualmente só se mudou
+    const baseAtual = rows[0].descricao.replace(/ \d+\/\d+$/, '');
+    if (body.descricao !== baseAtual) {
+      for (const r of rows) {
+        const { error: descErr } = await supabase
+          .from('transacoes')
+          .update({ descricao: `${body.descricao} ${r.parcela_atual}/${r.total_parcelas}` })
+          .eq('id', r.id);
+        if (descErr) return NextResponse.json({ error: descErr.message }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ success: true });
   }
 
