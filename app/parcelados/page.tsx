@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const hoje = new Date().toISOString().split('T')[0];
 
+type Filtro = 'abertos' | 'todos' | 'finalizados';
+
 type Grupo = {
   descricao: string;
   valorParcela: number;
@@ -17,12 +19,23 @@ type Grupo = {
   dataInicio: string;
 };
 
+type Secao = {
+  key: string;
+  titulo: string;
+  cor: string;
+  itens: Grupo[];
+  totalMes: number;
+  totalRestante: number;
+  totalGeral: number;
+};
+
 export default function Parcelados() {
   const [txs, setTxs] = useState<any[]>([]);
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [apenasAbertos, setApenasAbertos] = useState(true);
+  const [filtro, setFiltro] = useState<Filtro>('abertos');
+  const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<Grupo | null>(null);
   const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_id: '', meio: 'cartao' });
@@ -42,10 +55,8 @@ export default function Parcelados() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Agrupa por grupo_parcela, computando "pagas" pela data ≤ hoje
   const grupos: Record<string, Grupo> = txs.reduce((acc, t) => {
     const baseDesc = t.descricao.replace(/ \d+\/\d+$/, '');
-    // Fallback para dados importados sem grupo_parcela: agrupa por descrição + cartão + total
     const key = t.grupo_parcela || `${baseDesc}__${t.cartao_id ?? 'null'}__${t.total_parcelas}`;
     if (!acc[key]) {
       acc[key] = {
@@ -67,25 +78,50 @@ export default function Parcelados() {
   }, {} as Record<string, Grupo>);
 
   const lista = Object.values(grupos);
-  const filtradas = apenasAbertos ? lista.filter(g => g.pagas < g.totalParcelas) : lista;
 
-  // Seções: um array por cartão + sem cartão
-  const secoes: { titulo: string; cor: string; itens: Grupo[] }[] = [];
+  const filtradas = lista.filter(g => {
+    if (filtro === 'abertos') return g.pagas < g.totalParcelas;
+    if (filtro === 'finalizados') return g.pagas >= g.totalParcelas;
+    return true;
+  });
+
+  const buildSecao = (key: string, titulo: string, cor: string, itens: Grupo[]): Secao => {
+    const abertas = itens.filter(g => g.pagas < g.totalParcelas);
+    return {
+      key, titulo, cor, itens,
+      totalMes:      abertas.reduce((s, g) => s + g.valorParcela, 0),
+      totalRestante: itens.reduce((s, g) => s + g.valorParcela * Math.max(0, g.totalParcelas - g.pagas), 0),
+      totalGeral:    itens.reduce((s, g) => s + g.valorParcela * g.totalParcelas, 0),
+    };
+  };
+
+  const secoes: Secao[] = [];
   const cartoesComParcelas = cartoes.filter(c => filtradas.some(g => g.cartaoId === c.id));
   for (const c of cartoesComParcelas) {
     const itens = filtradas.filter(g => g.cartaoId === c.id);
-    if (itens.length) secoes.push({ titulo: c.nome, cor: c.cor, itens });
+    if (itens.length) secoes.push(buildSecao(String(c.id), c.nome, c.cor, itens));
   }
-  const semCartao = filtradas.filter(g => !g.cartaoId);
-  if (semCartao.length) {
-    secoes.push({ titulo: 'Pix / Dinheiro / Sem cartão', cor: '#908fa0', itens: semCartao });
+  const semCartaoItens = filtradas.filter(g => !g.cartaoId);
+  if (semCartaoItens.length) {
+    secoes.push(buildSecao('sem_cartao', 'Pix / Dinheiro / Sem cartão', '#908fa0', semCartaoItens));
   }
 
-  const totalRestante = filtradas.reduce((s, g) => s + g.valorParcela * (g.totalParcelas - g.pagas), 0);
+  const totalMesGlobal = lista
+    .filter(g => g.pagas < g.totalParcelas)
+    .reduce((s, g) => s + g.valorParcela, 0);
+  const totalRestanteGlobal = filtradas
+    .reduce((s, g) => s + g.valorParcela * Math.max(0, g.totalParcelas - g.pagas), 0);
+
+  const toggleSecao = (key: string) => {
+    setSecoesAbertas(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   const abrirEditar = (g: Grupo) => {
     setEditando(g);
-    const meio = g.meioP || (g.cartaoId ? 'cartao' : 'sem');
     setForm({
       descricao: g.descricao,
       valor: String(g.valorParcela),
@@ -116,91 +152,178 @@ export default function Parcelados() {
     load();
   };
 
+  const filtroOpts: { key: Filtro; label: string }[] = [
+    { key: 'abertos',     label: '⊙ Em aberto' },
+    { key: 'todos',       label: '◎ Todos' },
+    { key: 'finalizados', label: '✓ Finalizados' },
+  ];
+
+  const emptyMsg =
+    filtro === 'abertos'     ? 'em aberto' :
+    filtro === 'finalizados' ? 'finalizados' : '';
+
   return (
     <div>
+      {/* Header */}
       <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Parcelados</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
-            {filtradas.length} compras · {fmt(totalRestante)} restantes
+            {filtradas.length} compras · {fmt(totalMesGlobal)}/mês · {fmt(totalRestanteGlobal)} restantes
           </div>
         </div>
-        <button type="button" onClick={() => setApenasAbertos(!apenasAbertos)} className={apenasAbertos ? 'btn-primary' : 'btn-secondary'}>
-          {apenasAbertos ? '⊙ Em aberto' : '◎ Todos'}
-        </button>
+        <div className="page-header-actions">
+          {filtroOpts.map(f => (
+            <button
+              key={f.key}
+              type="button"
+              className={filtro === f.key ? 'btn-primary' : 'btn-secondary'}
+              style={{ padding: '8px 14px', fontSize: '13px' }}
+              onClick={() => setFiltro(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
+        <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>
+          carregando...
+        </div>
       ) : filtradas.length === 0 ? (
         <div className="card" style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>
-          Nenhum parcelado {apenasAbertos ? 'em aberto' : ''}
+          Nenhum parcelado {emptyMsg}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          {secoes.map(sec => (
-            <div key={sec.titulo}>
-              {/* Cabeçalho da seção */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: sec.cor, display: 'inline-block', flexShrink: 0 }}></span>
-                <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: '#dfe3e7' }}>{sec.titulo}</span>
-                <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {sec.itens.length} compra{sec.itens.length !== 1 ? 's' : ''} · {fmt(sec.itens.reduce((s, g) => s + g.valorParcela * (g.totalParcelas - g.pagas), 0))} restantes
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {sec.itens.map(g => {
-                  const pct = g.totalParcelas > 0 ? (g.pagas / g.totalParcelas) * 100 : 0;
-                  const restantes = g.totalParcelas - g.pagas;
-                  const fillColor = pct >= 75 ? '#6edab4' : pct >= 40 ? '#ffb783' : '#8083ff';
-                  return (
-                    <div
-                      key={g.grupo || g.id}
-                      className="card"
-                      style={{ padding: '18px 22px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                      onClick={() => abrirEditar(g)}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '15px', color: '#dfe3e7', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {g.descricao}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                            desde {new Date(g.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
-                            {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
-                              <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
-                                · {categorias.find(c => c.id === g.categoriaId)?.nome}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
-                          <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '17px', color: 'var(--tertiary)' }}>
-                            {fmt(g.valorParcela)}
-                            <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '3px', fontFamily: 'JetBrains Mono, monospace' }}>
-                            {fmt(g.valorParcela * restantes)} restantes
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--outline)', marginBottom: '5px', fontFamily: 'JetBrains Mono, monospace' }}>
-                          <span>{g.pagas} de {g.totalParcelas} pagas</span>
-                          <span style={{ color: fillColor }}>{Math.round(pct)}% · {restantes} restante{restantes !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div className="progress-track" style={{ height: '6px' }}>
-                          <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
-                        </div>
-                      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {secoes.map(sec => {
+            const isAberta = secoesAbertas.has(sec.key);
+            return (
+              <div key={sec.key}>
+                {/* ── Cabeçalho sanfona ── */}
+                <div
+                  className="card"
+                  style={{
+                    padding: '18px 22px',
+                    cursor: 'pointer',
+                    borderLeft: `3px solid ${sec.cor}`,
+                    borderRadius: isAberta ? '12px 12px 0 0' : '12px',
+                    borderBottom: isAberta ? '1px solid transparent' : undefined,
+                  }}
+                  onClick={() => toggleSecao(sec.key)}
+                >
+                  {/* Nome + chevron */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: sec.cor, flexShrink: 0, display: 'inline-block' }}></span>
+                      <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7' }}>{sec.titulo}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {sec.itens.length} compra{sec.itens.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                  );
-                })}
+                    <span style={{
+                      color: 'var(--outline)',
+                      fontSize: '18px',
+                      display: 'inline-block',
+                      transition: 'transform 0.2s',
+                      transform: isAberta ? 'rotate(90deg)' : 'rotate(0deg)',
+                    }}>›</span>
+                  </div>
+
+                  {/* Estatísticas */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    {[
+                      { label: 'TOTAL MÊS',   value: sec.totalMes,      color: 'var(--tertiary)' },
+                      { label: 'RESTANTE',     value: sec.totalRestante, color: '#ffb783' },
+                      { label: 'TOTAL GERAL',  value: sec.totalGeral,    color: 'var(--on-surface-muted)' },
+                    ].map(s => (
+                      <div key={s.label}>
+                        <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</div>
+                        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: s.color }}>{fmt(s.value)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Itens (expandidos) ── */}
+                {isAberta && (
+                  <div style={{
+                    background: 'var(--surface-low)',
+                    border: '1px solid var(--outline-variant)',
+                    borderTop: 'none',
+                    borderRadius: '0 0 12px 12px',
+                    padding: '10px 12px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}>
+                    {sec.itens.map(g => {
+                      const pct = g.totalParcelas > 0 ? (g.pagas / g.totalParcelas) * 100 : 0;
+                      const restantes = Math.max(0, g.totalParcelas - g.pagas);
+                      const finalizado = g.pagas >= g.totalParcelas;
+                      const fillColor = finalizado ? '#6edab4' : pct >= 75 ? '#6edab4' : pct >= 40 ? '#ffb783' : '#8083ff';
+
+                      return (
+                        <div
+                          key={g.grupo || g.id}
+                          className="card"
+                          style={{ padding: '14px 18px', cursor: 'pointer', opacity: finalizado ? 0.6 : 1 }}
+                          onClick={e => { e.stopPropagation(); abrirEditar(g); }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                                <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: '#dfe3e7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {g.descricao}
+                                </span>
+                                {finalizado && (
+                                  <span style={{ fontSize: '10px', color: '#6edab4', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(110,218,180,0.12)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0 }}>
+                                    QUITADO
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                                desde {new Date(g.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                                {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
+                                  <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                                    · {categorias.find(c => c.id === g.categoriaId)?.nome}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
+                              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: finalizado ? 'var(--outline)' : 'var(--tertiary)' }}>
+                                {fmt(g.valorParcela)}
+                                <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
+                              </div>
+                              {!finalizado && (
+                                <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                                  {fmt(g.valorParcela * restantes)} rest.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--outline)', marginBottom: '4px', fontFamily: 'JetBrains Mono, monospace' }}>
+                              <span>{g.pagas}/{g.totalParcelas} pagas</span>
+                              <span style={{ color: fillColor }}>
+                                {Math.round(pct)}%{!finalizado && ` · ${restantes} restante${restantes !== 1 ? 's' : ''}`}
+                              </span>
+                            </div>
+                            <div className="progress-track" style={{ height: '5px' }}>
+                              <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -215,12 +338,11 @@ export default function Parcelados() {
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
             </div>
 
-            {/* Info resumida */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '14px', background: 'var(--surface-low)', borderRadius: '10px' }}>
               {[
-                { label: 'PAGAS', value: `${editando.pagas}/${editando.totalParcelas}` },
-                { label: 'TOTAL', value: fmt(editando.valorParcela * editando.totalParcelas) },
-                { label: 'RESTANTE', value: fmt(editando.valorParcela * (editando.totalParcelas - editando.pagas)) },
+                { label: 'PAGAS',    value: `${editando.pagas}/${editando.totalParcelas}` },
+                { label: 'TOTAL',    value: fmt(editando.valorParcela * editando.totalParcelas) },
+                { label: 'RESTANTE', value: fmt(editando.valorParcela * Math.max(0, editando.totalParcelas - editando.pagas)) },
               ].map(i => (
                 <div key={i.label} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '4px' }}>{i.label}</div>
