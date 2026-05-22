@@ -11,6 +11,7 @@ const links = [
   { href: '/transacoes', label: 'Transações', icon: '↕' },
   { href: '/cartoes', label: 'Cartões', icon: '▣' },
   { href: '/parcelados', label: 'Parcelados', icon: '⊞' },
+  { href: '/fixas', label: 'Fixas', icon: '↻' },
   { href: '/historico', label: 'Histórico', icon: '◎' },
   { href: '/configuracoes', label: 'Configurações', icon: '⚙' },
 ];
