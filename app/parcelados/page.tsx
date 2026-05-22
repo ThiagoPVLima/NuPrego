@@ -44,10 +44,12 @@ export default function Parcelados() {
 
   // Agrupa por grupo_parcela, computando "pagas" pela data ≤ hoje
   const grupos: Record<string, Grupo> = txs.reduce((acc, t) => {
-    const key = t.grupo_parcela || String(t.id);
+    const baseDesc = t.descricao.replace(/ \d+\/\d+$/, '');
+    // Fallback para dados importados sem grupo_parcela: agrupa por descrição + cartão + total
+    const key = t.grupo_parcela || `${baseDesc}__${t.cartao_id ?? 'null'}__${t.total_parcelas}`;
     if (!acc[key]) {
       acc[key] = {
-        descricao: t.descricao.replace(/ \d+\/\d+$/, ''),
+        descricao: baseDesc,
         valorParcela: Number(t.valor),
         totalParcelas: t.total_parcelas,
         pagas: 0,

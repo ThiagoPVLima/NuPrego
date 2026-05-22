@@ -4,7 +4,20 @@ import { useState, useRef } from 'react';
 export default function Configuracoes() {
   const [importando, setImportando] = useState(false);
   const [resultado, setResultado] = useState<any>(null);
+  const [migrando, setMigrando] = useState(false);
+  const [resultadoMig, setResultadoMig] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const migrarGrupos = async () => {
+    if (!confirm('Agrupar parcelas importadas sem grupo? Essa operação é segura e pode ser desfeita manualmente.')) return;
+    setMigrando(true);
+    setResultadoMig(null);
+    try {
+      const r = await fetch('/api/migrar-grupos', { method: 'POST' });
+      setResultadoMig(await r.json());
+    } catch { setResultadoMig({ error: 'Erro ao migrar' }); }
+    finally { setMigrando(false); }
+  };
 
   const importar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -46,6 +59,26 @@ export default function Configuracoes() {
             {resultado.error
               ? <div style={{ color: '#f87171', fontSize: '14px' }}>❌ {resultado.error}</div>
               : <div style={{ color: 'var(--secondary)', fontSize: '14px' }}>✓ {resultado.importadas} transações importadas com sucesso!</div>
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Migração de grupos */}
+      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Agrupar parcelados importados</div>
+        <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
+          Transações parceladas importadas sem vínculo de grupo aparecem como cards separados na tela de Parcelados.
+          Execute essa operação <strong style={{ color: 'var(--on-surface-muted)' }}>uma vez</strong> para agrupá-las corretamente.
+        </div>
+        <button type="button" className="btn-primary" onClick={migrarGrupos} disabled={migrando} style={{ opacity: migrando ? 0.6 : 1 }}>
+          {migrando ? 'Agrupando...' : '⊞ Agrupar parcelados'}
+        </button>
+        {resultadoMig && (
+          <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: resultadoMig.error ? 'rgba(239,68,68,0.08)' : 'rgba(110,218,180,0.08)', border: `1px solid ${resultadoMig.error ? 'rgba(239,68,68,0.2)' : 'rgba(110,218,180,0.2)'}` }}>
+            {resultadoMig.error
+              ? <div style={{ color: '#f87171', fontSize: '14px' }}>❌ {resultadoMig.error}</div>
+              : <div style={{ color: 'var(--secondary)', fontSize: '14px' }}>✓ {resultadoMig.mensagem}</div>
             }
           </div>
         )}
