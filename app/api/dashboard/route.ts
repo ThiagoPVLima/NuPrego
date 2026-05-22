@@ -6,13 +6,10 @@ export async function GET(req: NextRequest) {
   const ano = parseInt(searchParams.get('ano') || String(new Date().getFullYear()));
   const mes = parseInt(searchParams.get('mes') || String(new Date().getMonth() + 1));
 
-  const start = `${ano}-${String(mes).padStart(2, '0')}-01`;
-  const end = new Date(ano, mes, 0).toISOString().split('T')[0];
-
   const [transacoes, cartoes, meses] = await Promise.all([
     supabase.from('transacoes')
       .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
-      .gte('data', start).lte('data', end),
+      .eq('fatura_ano', ano).eq('fatura_mes', mes),
     supabase.from('cartoes').select('*').eq('ativo', true).order('id'),
     supabase.from('meses').select('*').eq('ano', ano).eq('mes', mes).single(),
   ]);
@@ -21,7 +18,6 @@ export async function GET(req: NextRequest) {
   const total = txs.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const renda = Number(meses.data?.renda || 0);
 
-  // Por cartão (incluindo Pix e Dinheiro como entradas virtuais)
   const porCartao = (cartoes.data || [])
     .map((c: any) => ({
       ...c,
@@ -45,14 +41,12 @@ export async function GET(req: NextRequest) {
   if (dinheiroTotal > 0) porCartao.push({ id: 'dinheiro', nome: 'Dinheiro', cor: '#6edab4', total: dinheiroTotal });
   if (semCartaoTotal > 0) porCartao.push({ id: 'sem_cartao', nome: 'Sem cartão', cor: '#908fa0', total: semCartaoTotal });
 
-  // Por tipo
   const porTipo = {
     fixa:      txs.filter((t: any) => t.tipo === 'fixa').reduce((s: number, t: any) => s + Number(t.valor), 0),
     parcelada: txs.filter((t: any) => t.tipo === 'parcelada').reduce((s: number, t: any) => s + Number(t.valor), 0),
     avulsa:    txs.filter((t: any) => t.tipo === 'avulsa').reduce((s: number, t: any) => s + Number(t.valor), 0),
   };
 
-  // Por categoria
   const catMap: Record<number, any> = {};
   txs.forEach((t: any) => {
     if (!t.categoria_id) return;

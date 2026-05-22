@@ -19,6 +19,7 @@ const EMOJIS = [
 
 
 type Categoria = { id: number; nome: string; icone: string | null; cor: string };
+type Cartao = { id: number; nome: string; cor: string; fechamento: number | null };
 
 const CORES_PRESET = [
   '#8083ff','#6edab4','#ffb783','#f87171','#00b8d4',
@@ -37,6 +38,10 @@ export default function Configuracoes() {
   const [migrando, setMigrando] = useState(false);
   const [resultadoMig, setResultadoMig] = useState<any>(null);
 
+  // ── migração faturas ──
+  const [migrandoFaturas, setMigrandoFaturas] = useState(false);
+  const [resultadoFaturas, setResultadoFaturas] = useState<any>(null);
+
   // ── categorias ──
   const [cats, setCats] = useState<Categoria[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -48,6 +53,13 @@ export default function Configuracoes() {
   const [deletando, setDeletando] = useState<number | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+  // ── cartões (fechamento) ──
+  const [cartoes, setCartoes] = useState<Cartao[]>([]);
+  const [loadingCartoes, setLoadingCartoes] = useState(true);
+  const [fechamentos, setFechamentos] = useState<Record<number, string>>({});
+  const [salvandoCartao, setSalvandoCartao] = useState<number | null>(null);
+  const [erroCartao, setErroCartao] = useState<Record<number, string>>({});
+
   const loadCats = useCallback(async () => {
     setLoadingCats(true);
     const r = await fetch('/api/categorias');
@@ -56,7 +68,40 @@ export default function Configuracoes() {
     setLoadingCats(false);
   }, []);
 
-  useEffect(() => { loadCats(); }, [loadCats]);
+  const loadCartoes = useCallback(async () => {
+    setLoadingCartoes(true);
+    const r = await fetch('/api/cartoes');
+    const d = await r.json();
+    const lista: Cartao[] = Array.isArray(d) ? d : [];
+    setCartoes(lista);
+    const map: Record<number, string> = {};
+    for (const c of lista) map[c.id] = c.fechamento ? String(c.fechamento) : '';
+    setFechamentos(map);
+    setLoadingCartoes(false);
+  }, []);
+
+  useEffect(() => { loadCats(); loadCartoes(); }, [loadCats, loadCartoes]);
+
+  const salvarFechamento = async (id: number) => {
+    const val = fechamentos[id]?.trim();
+    const num = val ? parseInt(val) : null;
+    if (val && (isNaN(num!) || num! < 1 || num! > 28)) {
+      setErroCartao(e => ({ ...e, [id]: 'Dia inválido (1–28)' }));
+      return;
+    }
+    setSalvandoCartao(id);
+    setErroCartao(e => ({ ...e, [id]: '' }));
+    const r = await fetch(`/api/cartoes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fechamento: num }),
+    });
+    if (!r.ok) {
+      const json = await r.json();
+      setErroCartao(e => ({ ...e, [id]: json.error || 'Erro ao salvar' }));
+    }
+    setSalvandoCartao(null);
+  };
 
   const abrirNova = () => {
     setEditando(null);
@@ -125,6 +170,17 @@ export default function Configuracoes() {
     finally { setMigrando(false); }
   };
 
+  const migrarFaturas = async () => {
+    if (!confirm('Recalcular os meses de fatura de todas as transações com base no fechamento dos cartões? Isso pode demorar alguns segundos.')) return;
+    setMigrandoFaturas(true);
+    setResultadoFaturas(null);
+    try {
+      const r = await fetch('/api/migrar-faturas', { method: 'POST' });
+      setResultadoFaturas(await r.json());
+    } catch { setResultadoFaturas({ error: 'Erro ao recalcular' }); }
+    finally { setMigrandoFaturas(false); }
+  };
+
   const importar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setImportando(true); setResultado(null);
@@ -140,7 +196,52 @@ export default function Configuracoes() {
     <div>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Configurações</h1>
-        <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Categorias, importação e informações do sistema</div>
+        <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Categorias, cartões, importação e informações do sistema</div>
+      </div>
+
+      {/* ── Cartões — dia de fechamento ── */}
+      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Dia de fechamento dos cartões</div>
+        <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
+          Compras feitas antes do dia de fechamento entram na fatura do mês anterior. Deixe em branco para usar o mês calendário.
+        </div>
+        {loadingCartoes ? (
+          <div style={{ color: 'var(--outline)', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}>carregando...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {cartoes.map(c => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '8px', background: 'var(--surface-low)' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.cor || '#8083ff', flexShrink: 0, display: 'inline-block' }}></span>
+                <span style={{ flex: 1, fontSize: '14px', color: 'var(--on-surface)' }}>{c.nome}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>Fecha dia</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={fechamentos[c.id] ?? ''}
+                    onChange={e => setFechamentos(f => ({ ...f, [c.id]: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && salvarFechamento(c.id)}
+                    placeholder="—"
+                    style={{ width: '60px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontSize: '14px' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => salvarFechamento(c.id)}
+                    disabled={salvandoCartao === c.id}
+                    style={{ fontSize: '12px', padding: '6px 12px', opacity: salvandoCartao === c.id ? 0.6 : 1 }}
+                  >
+                    {salvandoCartao === c.id ? '...' : 'Salvar'}
+                  </button>
+                </div>
+                {erroCartao[c.id] && (
+                  <span style={{ fontSize: '12px', color: '#f87171', fontFamily: 'JetBrains Mono, monospace' }}>{erroCartao[c.id]}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Categorias ── */}
@@ -233,6 +334,26 @@ export default function Configuracoes() {
             {resultadoMig.error
               ? <div style={{ color: '#f87171', fontSize: '14px' }}>❌ {resultadoMig.error}</div>
               : <div style={{ color: 'var(--secondary)', fontSize: '14px' }}>✓ {resultadoMig.mensagem}</div>
+            }
+          </div>
+        )}
+      </div>
+
+      {/* ── Migração faturas ── */}
+      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Recalcular meses de fatura</div>
+        <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
+          Aplica o dia de fechamento de cada cartão a todas as transações existentes.
+          Execute <strong style={{ color: 'var(--on-surface-muted)' }}>após configurar os fechamentos</strong> acima e sempre que alterar um fechamento.
+        </div>
+        <button type="button" className="btn-primary" onClick={migrarFaturas} disabled={migrandoFaturas} style={{ opacity: migrandoFaturas ? 0.6 : 1 }}>
+          {migrandoFaturas ? 'Recalculando...' : '↻ Recalcular faturas'}
+        </button>
+        {resultadoFaturas && (
+          <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: resultadoFaturas.error ? 'rgba(239,68,68,0.08)' : 'rgba(110,218,180,0.08)', border: `1px solid ${resultadoFaturas.error ? 'rgba(239,68,68,0.2)' : 'rgba(110,218,180,0.2)'}` }}>
+            {resultadoFaturas.error
+              ? <div style={{ color: '#f87171', fontSize: '14px' }}>❌ {resultadoFaturas.error}</div>
+              : <div style={{ color: 'var(--secondary)', fontSize: '14px' }}>✓ {resultadoFaturas.atualizadas} transações recalculadas com sucesso!</div>
             }
           </div>
         )}

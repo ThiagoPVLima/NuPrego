@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { calcFatura } from '@/lib/billing';
 import * as XLSX from 'xlsx';
 
 const MESES_PT: Record<string, number> = {
@@ -34,6 +35,11 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const file = form.get('file') as File | null;
   if (!file) return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });
+
+  // Load card fechamentos upfront
+  const { data: cartoes } = await supabase.from('cartoes').select('id, fechamento');
+  const fechamentoMap: Record<number, number | null> = {};
+  for (const c of cartoes || []) fechamentoMap[c.id] = c.fechamento ?? null;
 
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'buffer', cellDates: true });
@@ -71,6 +77,8 @@ export async function POST(req: NextRequest) {
       if (!valor) continue;
       const data = parseDate(row[0]) || `${ano}-${String(mesNum).padStart(2,'0')}-05`;
       const pm = descricao.match(/(\d+)\/(\d+)$/);
+      const fechamento = cartaoAtual ? (fechamentoMap[cartaoAtual] ?? null) : null;
+      const { fatura_ano, fatura_mes } = calcFatura(data, fechamento);
       inserts.push({
         descricao: descricao.replace(/\s+\d+\/\d+$/,'').trim() || descricao,
         valor, data,
@@ -78,6 +86,7 @@ export async function POST(req: NextRequest) {
         cartao_id: cartaoAtual,
         parcela_atual: pm ? parseInt(pm[1]) : 1,
         total_parcelas: pm ? parseInt(pm[2]) : 1,
+        fatura_ano, fatura_mes,
       });
     }
   }

@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { calcFatura } from '@/lib/billing';
+
+async function getFechamento(cartao_id: number | null): Promise<number | null> {
+  if (!cartao_id) return null;
+  const { data } = await supabase.from('cartoes').select('fechamento').eq('id', cartao_id).single();
+  return data?.fechamento ?? null;
+}
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -9,17 +16,17 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
   const catIds: number[] = Array.isArray(body.categoria_ids) ? body.categoria_ids : [];
   const catId = catIds[0] ?? null;
+  const fechamento = await getFechamento(body.cartao_id || null);
 
   if (grupo) {
     const { data: rows, error: fetchError } = await supabase
       .from('transacoes')
-      .select('id, descricao, parcela_atual, total_parcelas')
+      .select('id, descricao, parcela_atual, total_parcelas, data')
       .eq('grupo_parcela', grupo);
 
     if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
     if (!rows?.length) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
-    // Atualiza campos compartilhados de uma vez (evita upsert com ID serial)
     const { error: sharedErr } = await supabase
       .from('transacoes')
       .update({
@@ -32,7 +39,16 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       .eq('grupo_parcela', grupo);
     if (sharedErr) return NextResponse.json({ error: sharedErr.message }, { status: 500 });
 
-    // Atualiza descrição individualmente só se mudou
+    // Recompute billing month per installment (each has its own date)
+    for (const r of rows) {
+      const { fatura_ano, fatura_mes } = calcFatura(r.data, fechamento);
+      const { error: fatErr } = await supabase
+        .from('transacoes')
+        .update({ fatura_ano, fatura_mes })
+        .eq('id', r.id);
+      if (fatErr) return NextResponse.json({ error: fatErr.message }, { status: 500 });
+    }
+
     const baseAtual = rows[0].descricao.replace(/ \d+\/\d+$/, '');
     if (body.descricao !== baseAtual) {
       for (const r of rows) {
@@ -47,6 +63,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ success: true });
   }
 
+  const { fatura_ano, fatura_mes } = calcFatura(body.data, fechamento);
+
   const { error } = await supabase.from('transacoes').update({
     descricao: body.descricao,
     valor: body.valor,
@@ -56,6 +74,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     categoria_id: catId,
     categoria_ids: catIds,
     meio_pagamento: body.meio_pagamento || null,
+    fatura_ano,
+    fatura_mes,
   }).eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
