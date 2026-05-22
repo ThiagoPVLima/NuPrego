@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(git config *)",
-      "Bash(git init *)"
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(dir \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\public\")",
+      "PowerShell(ls \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\node_modules\\\\next\\\\dist\\\\docs\\\\\" -ErrorAction SilentlyContinue)",
+      "PowerShell(if \\(-not $?\\) { \"NOT FOUND\" })",
+      "PowerShell(ls \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\node_modules\\\\next\\\\\")",
+      "PowerShell(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('version',''\\)\\)\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\public\\\\NuPrego-Logo-Ico.ico\" -Destination \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\app\\\\favicon.ico\" -Force)"
     ]
   }
 }

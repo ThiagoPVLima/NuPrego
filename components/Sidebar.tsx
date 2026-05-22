@@ -1,6 +1,9 @@
 'use client';
-import { usePathname } from 'next/navigation';
+
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { createSupabaseBrowserClient } from '@/lib/supabase';
 
 const links = [
   { href: '/', label: 'Dashboard', icon: '◉' },
@@ -11,8 +14,16 @@ const links = [
   { href: '/configuracoes', label: 'Configurações', icon: '⚙' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <aside style={{
@@ -31,14 +42,13 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{ padding: '0 8px', marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '36px', height: '36px',
-            background: 'linear-gradient(135deg, #494bd6, #8083ff)',
-            borderRadius: '10px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', fontWeight: 800, color: 'white',
-            fontFamily: 'Manrope, sans-serif',
-          }}>N</div>
+          <Image
+            src="/NuPrego-Logo.png"
+            alt="NuPrego"
+            width={36}
+            height={36}
+            style={{ borderRadius: '10px', objectFit: 'cover' }}
+          />
           <div>
             <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', letterSpacing: '-0.02em' }}>NuPrego</div>
             <div style={{ fontSize: '11px', color: '#464554', marginTop: '1px' }}>Controle de Gastos</div>
@@ -60,10 +70,49 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ fontSize: '11px', color: '#464554', fontFamily: 'JetBrains Mono, monospace' }}>
           {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase()}
         </div>
+        <div style={{
+          fontSize: '12px',
+          color: '#8b919a',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          paddingBottom: '2px',
+        }} title={userName}>
+          {userName}
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            color: '#464554',
+            fontSize: '12px',
+            cursor: 'pointer',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#f87171';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#464554';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+          }}
+        >
+          <span style={{ fontSize: '13px' }}>⎋</span>
+          Sair
+        </button>
       </div>
     </aside>
   );
