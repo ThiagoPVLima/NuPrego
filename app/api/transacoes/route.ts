@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   const cartao_id = searchParams.get('cartao_id');
   const tipo = searchParams.get('tipo');
   const busca = searchParams.get('busca');
+  const meio = searchParams.get('meio');
 
   let query = supabase
     .from('transacoes')
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest) {
   if (cartao_id) query = query.eq('cartao_id', cartao_id);
   if (tipo) query = query.eq('tipo', tipo);
   if (busca) query = query.ilike('descricao', `%${busca}%`);
+  if (meio) query = query.eq('meio_pagamento', meio);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, data, tipo, cartao_id, categoria_id, total_parcelas } = body;
+  const { descricao, valor, data, tipo, cartao_id, categoria_id, total_parcelas, meio_pagamento } = body;
 
   if (tipo === 'parcelada' && total_parcelas > 1) {
     const grupo = randomUUID();
@@ -47,8 +49,10 @@ export async function POST(req: NextRequest) {
         descricao: `${descricao} ${i}/${total_parcelas}`,
         valor: valorParcela,
         data: d.toISOString().split('T')[0],
-        tipo, cartao_id: cartao_id || null,
+        tipo,
+        cartao_id: cartao_id || null,
         categoria_id: categoria_id || null,
+        meio_pagamento: meio_pagamento || null,
         parcela_atual: i, total_parcelas, grupo_parcela: grupo,
       });
     }
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
     descricao, valor, data, tipo,
     cartao_id: cartao_id || null,
     categoria_id: categoria_id || null,
+    meio_pagamento: meio_pagamento || null,
     parcela_atual: 1, total_parcelas: 1,
   }).select().single();
 

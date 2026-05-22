@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+const pct = (val: number, total: number) => total > 0 ? Math.round((val / total) * 100) : 0;
 
 export default function Dashboard() {
   const now = new Date();
@@ -32,9 +33,13 @@ export default function Dashboard() {
   };
 
   const salvarRenda = async () => {
-    await fetch('/api/meses', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ano, mes, renda: parseFloat(renda) || 0 }) });
-    setEditRenda(false); load();
+    await fetch('/api/meses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ano, mes, renda: parseFloat(renda) || 0 }),
+    });
+    setEditRenda(false);
+    load();
   };
 
   if (loading) return (
@@ -44,6 +49,9 @@ export default function Dashboard() {
   );
 
   const total = Number(data?.total || 0);
+  const fixas = Number(data?.porTipo?.fixa || 0);
+  const parceladas = Number(data?.porTipo?.parcelada || 0);
+  const avulsas = Number(data?.porTipo?.avulsa || 0);
   const rendaVal = Number(data?.renda || 0);
   const saldo = rendaVal - total;
 
@@ -53,7 +61,7 @@ export default function Dashboard() {
       <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
-          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{data?.quantidade || 0} transações registradas</div>
+          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{data?.quantidade || 0} transações · {MESES[mes-1]} {ano}</div>
         </div>
         <div className="page-header-actions">
           <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
@@ -62,57 +70,85 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="stats-grid">
-        {[
-          { label: 'Total gasto', value: fmt(total), color: '#f87171', sub: 'no mês' },
-          { label: 'Renda', value: fmt(rendaVal), color: 'var(--secondary)', sub: 'clique para editar', onClick: () => setEditRenda(true) },
-          { label: 'Saldo', value: fmt(saldo), color: saldo >= 0 ? 'var(--secondary)' : '#f87171', sub: saldo >= 0 ? 'positivo' : 'negativo' },
-          { label: 'Transações', value: String(data?.quantidade || 0), color: 'var(--primary)', sub: 'lançamentos' },
-        ].map((s) => (
-          <div key={s.label} className="card" style={{ padding: '20px', cursor: s.onClick ? 'pointer' : 'default' }} onClick={s.onClick}>
-            <div style={{ fontSize: '12px', color: 'var(--outline)', marginBottom: '10px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>{s.label.toUpperCase()}</div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '24px', color: s.color, letterSpacing: '-0.02em' }}>{s.value}</div>
-            <div style={{ fontSize: '11px', color: 'var(--outline-variant)', marginTop: '4px' }}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Renda modal */}
-      {editRenda && (
-        <div className="modal-overlay" onClick={() => setEditRenda(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px' }}>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', marginBottom: '16px', color: '#dfe3e7' }}>Renda de {MESES[mes-1]}</div>
-            <input type="number" step="0.01" value={renda} onChange={e => setRenda(e.target.value)} placeholder="0,00" style={{ marginBottom: '16px' }} />
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-secondary" onClick={() => setEditRenda(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-              <button className="btn-primary" onClick={salvarRenda} style={{ flex: 1, justifyContent: 'center' }}>Salvar</button>
+      {/* Hero: total gasto */}
+      <div className="card" style={{ padding: '28px 32px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '10px', textTransform: 'uppercase' }}>
+              Total gasto em {MESES[mes-1]}
+            </div>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '40px', color: '#f87171', letterSpacing: '-0.03em', lineHeight: 1 }}>
+              {fmt(total)}
             </div>
           </div>
+          <div style={{ textAlign: 'right' }}>
+            {rendaVal > 0 ? (
+              <>
+                <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '6px' }}>RENDA</div>
+                <div
+                  style={{ fontSize: '22px', fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: 'var(--secondary)', cursor: 'pointer' }}
+                  onClick={() => setEditRenda(true)}
+                >
+                  {fmt(rendaVal)}
+                </div>
+                <div style={{ fontSize: '11px', color: saldo >= 0 ? 'var(--secondary)' : '#f87171', marginTop: '4px', fontFamily: 'JetBrains Mono, monospace' }}>
+                  {saldo >= 0 ? `sobram ${fmt(saldo)}` : `estouro de ${fmt(-saldo)}`}
+                </div>
+              </>
+            ) : (
+              <button type="button" className="btn-ghost" onClick={() => setEditRenda(true)} style={{ fontSize: '12px', color: 'var(--outline)' }}>
+                + definir renda
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
+        {/* Breakdown por tipo */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {([
+            { label: 'Fixas', value: fixas, color: '#8083ff' },
+            { label: 'Parceladas', value: parceladas, color: '#ffb783' },
+            { label: 'Avulsas', value: avulsas, color: '#6edab4' },
+          ] as const).map(s => (
+            <div key={s.label}>
+              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                {s.label.toUpperCase()}
+              </div>
+              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: s.color }}>
+                {fmt(s.value)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct(s.value, total)}%`, height: '100%', background: s.color, borderRadius: '2px' }}></div>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>{pct(s.value, total)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Gastos por cartão/meio + Por categoria */}
       <div className="two-col-grid">
-        {/* Por cartão */}
         <div className="card" style={{ padding: '24px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>GASTOS POR CARTÃO</div>
+          <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>POR CARTÃO / MEIO</div>
           {(data?.porCartao || []).filter((c: any) => c.total > 0).length === 0
             ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Nenhum gasto este mês</div>
             : (data?.porCartao || []).map((c: any) => {
               const v = Number(c.total || 0);
               if (v === 0) return null;
-              const pct = total > 0 ? (v / total) * 100 : 0;
+              const p = total > 0 ? (v / total) * 100 : 0;
               return (
-                <div key={c.id} style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                <div key={c.id} style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
                     <span style={{ color: 'var(--on-surface-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.cor, display: 'inline-block', flexShrink: 0 }}></span>
                       {c.nome}
                     </span>
-                    <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(v)}</span>
+                    <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{fmt(v)}</span>
                   </div>
                   <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: c.cor }}></div>
+                    <div className="progress-fill" style={{ width: `${p}%`, background: c.cor }}></div>
                   </div>
                 </div>
               );
@@ -120,14 +156,13 @@ export default function Dashboard() {
           }
         </div>
 
-        {/* Por categoria */}
         <div className="card" style={{ padding: '24px' }}>
           <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>POR CATEGORIA</div>
           {(data?.porCategoria || []).length === 0
             ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Sem dados</div>
             : (data?.porCategoria || []).map((c: any) => {
               const v = Number(c.total || 0);
-              const pct = total > 0 ? (v / total) * 100 : 0;
+              const p = total > 0 ? (v / total) * 100 : 0;
               return (
                 <div key={c.nome} style={{ marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
@@ -135,7 +170,7 @@ export default function Dashboard() {
                     <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{fmt(v)}</span>
                   </div>
                   <div className="progress-track" style={{ height: '4px' }}>
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: c.cor || 'var(--primary-dark)' }}></div>
+                    <div className="progress-fill" style={{ width: `${p}%`, background: c.cor || 'var(--primary-dark)' }}></div>
                   </div>
                 </div>
               );
@@ -144,7 +179,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Parcelas */}
+      {/* Parcelas do mês */}
       <div className="card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELAS DO MÊS</div>
@@ -165,6 +200,20 @@ export default function Dashboard() {
           ))
         }
       </div>
+
+      {/* Modal renda */}
+      {editRenda && (
+        <div className="modal-overlay" onClick={() => setEditRenda(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px' }}>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', marginBottom: '16px', color: '#dfe3e7' }}>Renda de {MESES[mes-1]}</div>
+            <input type="number" step="0.01" value={renda} onChange={e => setRenda(e.target.value)} placeholder="0,00" style={{ marginBottom: '16px' }} />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn-secondary" onClick={() => setEditRenda(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
+              <button type="button" className="btn-primary" onClick={salvarRenda} style={{ flex: 1, justifyContent: 'center' }}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

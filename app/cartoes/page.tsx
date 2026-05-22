@@ -34,7 +34,7 @@ export default function Cartoes() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Cartões</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{cartoes.length} cartões ativos</div>

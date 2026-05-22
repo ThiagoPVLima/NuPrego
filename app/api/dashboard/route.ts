@@ -9,29 +9,47 @@ export async function GET(req: NextRequest) {
   const start = `${ano}-${String(mes).padStart(2, '0')}-01`;
   const end = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-  const [transacoes, cartoes, meses, categorias] = await Promise.all([
-    supabase.from('transacoes').select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
+  const [transacoes, cartoes, meses] = await Promise.all([
+    supabase.from('transacoes')
+      .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
       .gte('data', start).lte('data', end),
     supabase.from('cartoes').select('*').eq('ativo', true).order('id'),
     supabase.from('meses').select('*').eq('ano', ano).eq('mes', mes).single(),
-    supabase.from('categorias').select('*'),
   ]);
 
   const txs = transacoes.data || [];
   const total = txs.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const renda = Number(meses.data?.renda || 0);
 
-  // Por cartão
-  const porCartao = (cartoes.data || []).map((c: any) => ({
-    ...c,
-    total: txs.filter((t: any) => t.cartao_id === c.id).reduce((s: number, t: any) => s + Number(t.valor), 0),
-  })).sort((a: any, b: any) => b.total - a.total);
+  // Por cartão (incluindo Pix e Dinheiro como entradas virtuais)
+  const porCartao = (cartoes.data || [])
+    .map((c: any) => ({
+      ...c,
+      total: txs
+        .filter((t: any) => t.cartao_id === c.id)
+        .reduce((s: number, t: any) => s + Number(t.valor), 0),
+    }))
+    .sort((a: any, b: any) => b.total - a.total);
+
+  const pixTotal = txs
+    .filter((t: any) => t.meio_pagamento === 'pix')
+    .reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const dinheiroTotal = txs
+    .filter((t: any) => t.meio_pagamento === 'dinheiro')
+    .reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const semCartaoTotal = txs
+    .filter((t: any) => !t.cartao_id && !t.meio_pagamento)
+    .reduce((s: number, t: any) => s + Number(t.valor), 0);
+
+  if (pixTotal > 0) porCartao.push({ id: 'pix', nome: 'Pix', cor: '#00b8d4', total: pixTotal });
+  if (dinheiroTotal > 0) porCartao.push({ id: 'dinheiro', nome: 'Dinheiro', cor: '#6edab4', total: dinheiroTotal });
+  if (semCartaoTotal > 0) porCartao.push({ id: 'sem_cartao', nome: 'Sem cartão', cor: '#908fa0', total: semCartaoTotal });
 
   // Por tipo
   const porTipo = {
-    fixa: txs.filter((t: any) => t.tipo === 'fixa').reduce((s: number, t: any) => s + Number(t.valor), 0),
+    fixa:      txs.filter((t: any) => t.tipo === 'fixa').reduce((s: number, t: any) => s + Number(t.valor), 0),
     parcelada: txs.filter((t: any) => t.tipo === 'parcelada').reduce((s: number, t: any) => s + Number(t.valor), 0),
-    avulsa: txs.filter((t: any) => t.tipo === 'avulsa').reduce((s: number, t: any) => s + Number(t.valor), 0),
+    avulsa:    txs.filter((t: any) => t.tipo === 'avulsa').reduce((s: number, t: any) => s + Number(t.valor), 0),
   };
 
   // Por categoria
@@ -43,7 +61,6 @@ export async function GET(req: NextRequest) {
   });
   const porCategoria = Object.values(catMap).sort((a: any, b: any) => b.total - a.total).slice(0, 8);
 
-  // Parcelas do mês
   const parcelasAbertas = txs.filter((t: any) => t.tipo === 'parcelada');
 
   return NextResponse.json({
