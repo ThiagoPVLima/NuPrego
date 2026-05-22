@@ -1,7 +1,22 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+
+const EMOJIS = [
+  '🍔','🍕','🍜','🍣','🥗','🥩','🍱','☕','🍺','🍷',
+  '🛒','🧺','🛍️','🏠','🔧','🧹','💡','🛋️',
+  '🚗','🚇','⛽','✈️','🚲','🚕',
+  '💊','🏥','💪','🧘','🏋️','🩺',
+  '🎮','🎬','🎵','📺','🎨','🎭','🎲',
+  '📱','💻','🖥️','📷',
+  '👕','👟','💄','💇','🕶️',
+  '📚','🎓','📝','✏️',
+  '💰','💳','💵','📈',
+  '🐶','🐱','🌿','🌱','🌸',
+  '🏖️','🏕️','🌍','⛺',
+  '⚽','🎾','🏊','🏆',
+  '🎁','❤️','⭐','🔑','🎉',
+];
+
 
 type Categoria = { id: number; nome: string; icone: string | null; cor: string };
 
@@ -284,14 +299,21 @@ export default function Configuracoes() {
                   )}
                 </div>
                 {showEmojiPicker && (
-                  <div style={{ marginTop: '8px', position: 'relative', zIndex: 10 }}>
-                    <EmojiPicker
-                      onEmojiClick={data => { setForm(f => ({ ...f, icone: data.emoji })); setShowEmojiPicker(false); }}
-                      skinTonesDisabled
-                      searchPlaceholder="Buscar emoji..."
-                      width="100%"
-                      height={340}
-                    />
+                  <div style={{ marginTop: '8px', padding: '12px', background: 'var(--surface-low)', border: '1px solid var(--outline-variant)', borderRadius: '10px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                      {EMOJIS.map(e => (
+                        <button
+                          key={e}
+                          type="button"
+                          onClick={() => { setForm(f => ({ ...f, icone: e })); setShowEmojiPicker(false); }}
+                          style={{ fontSize: '22px', lineHeight: 1, padding: '6px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', transition: 'background 0.1s' }}
+                          onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--surface-high)')}
+                          onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

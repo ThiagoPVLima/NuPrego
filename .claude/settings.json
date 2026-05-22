@@ -37,7 +37,8 @@
       "PowerShell(Stop-Process -Force)",
       "PowerShell(Stop-Process -Force 2>$null)",
       "Bash(git reset *)",
-      "Bash(mkdir -p \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\app\\\\api\\\\categorias\\\\[id]\")"
+      "Bash(mkdir -p \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\\\\app\\\\api\\\\categorias\\\\[id]\")",
+      "Bash(npm uninstall *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\Documents\\Projetos Pessoais\\NuPrego\\app\\api\\categorias"
