@@ -72,23 +72,21 @@ export default function Transacoes() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{txs.length} itens · {fmt(total)}</div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="page-header-actions">
           <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
-          <div style={{ background: 'var(--surface-high)', border: '1px solid var(--outline-variant)', borderRadius: '8px', padding: '8px 20px', fontSize: '14px', color: 'var(--on-surface-muted)', minWidth: '150px', textAlign: 'center', fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}>
-            {MESES[mes-1]} {ano}
-          </div>
+          <div className="month-display">{MESES[mes-1]} {ano}</div>
           <button className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
           <button className="btn-primary" onClick={abrirNova}>+ Nova transação</button>
         </div>
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+      <div className="filters-row">
         <input placeholder="Buscar transação..." value={busca} onChange={e => setBusca(e.target.value)} style={{ maxWidth: '220px' }} />
         <select value={filtroCartao} onChange={e => setFiltroCartao(e.target.value)} style={{ maxWidth: '180px' }}>
           <option value="">Todos os cartões</option>

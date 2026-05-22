@@ -50,22 +50,20 @@ export default function Dashboard() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{data?.quantidade || 0} transações registradas</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="page-header-actions">
           <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
-          <div style={{ background: 'var(--surface-high)', border: '1px solid var(--outline-variant)', borderRadius: '8px', padding: '8px 20px', fontSize: '14px', color: 'var(--on-surface-muted)', minWidth: '150px', textAlign: 'center', fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}>
-            {MESES[mes-1]} {ano}
-          </div>
+          <div className="month-display">{MESES[mes-1]} {ano}</div>
           <button className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
         </div>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="stats-grid">
         {[
           { label: 'Total gasto', value: fmt(total), color: '#f87171', sub: 'no mês' },
           { label: 'Renda', value: fmt(rendaVal), color: 'var(--secondary)', sub: 'clique para editar', onClick: () => setEditRenda(true) },
@@ -94,7 +92,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div className="two-col-grid">
         {/* Por cartão */}
         <div className="card" style={{ padding: '24px' }}>
           <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>GASTOS POR CARTÃO</div>

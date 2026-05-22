@@ -38,12 +38,12 @@ export default function Historico() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Histórico</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Evolução de gastos ao longo do tempo</div>
         </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div className="page-header-actions">
           <button onClick={() => setAnoSel(null)} className={!anoSel ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 14px', fontSize: '13px' }}>Todos</button>
           {anos.map(a => (
             <button key={a} onClick={() => setAnoSel(a)} className={anoSel === a ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 14px', fontSize: '13px' }}>{a}</button>

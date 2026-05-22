@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               userName={user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? ''}
             />
           )}
-          <main style={{ flex: 1, overflow: 'auto', padding: user ? '32px' : '0', minWidth: 0 }}>
+          <main className={`main-content${user ? ' with-sidebar' : ''}`}>
             {children}
           </main>
         </div>

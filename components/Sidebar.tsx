@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,6 +18,7 @@ const links = [
 export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -25,21 +27,8 @@ export default function Sidebar({ userName }: { userName: string }) {
     router.refresh();
   }
 
-  return (
-    <aside style={{
-      width: '220px',
-      minHeight: '100vh',
-      background: '#0a0f12',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      padding: '24px 12px',
-      display: 'flex',
-      flexDirection: 'column',
-      flexShrink: 0,
-      position: 'sticky',
-      top: 0,
-      height: '100vh',
-    }}>
-      {/* Logo */}
+  const navContent = (
+    <>
       <div style={{ padding: '0 8px', marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Image
@@ -56,12 +45,16 @@ export default function Sidebar({ userName }: { userName: string }) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
         {links.map((l) => {
           const active = pathname === l.href || (l.href !== '/' && pathname.startsWith(l.href));
           return (
-            <Link key={l.href} href={l.href} className={`nav-link ${active ? 'active' : ''}`}>
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`nav-link ${active ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+            >
               <span style={{ fontSize: '15px', width: '20px', textAlign: 'center', flexShrink: 0 }}>{l.icon}</span>
               {l.label}
             </Link>
@@ -69,7 +62,6 @@ export default function Sidebar({ userName }: { userName: string }) {
         })}
       </nav>
 
-      {/* Footer */}
       <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ fontSize: '11px', color: '#464554', fontFamily: 'JetBrains Mono, monospace' }}>
           {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase()}
@@ -114,6 +106,60 @@ export default function Sidebar({ userName }: { userName: string }) {
           Sair
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <header className="mobile-header">
+        <button
+          type="button"
+          className="hamburger-btn"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Abrir menu"
+        >
+          <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+            <rect width="20" height="2" rx="1" fill="currentColor" />
+            <rect y="7" width="20" height="2" rx="1" fill="currentColor" />
+            <rect y="14" width="20" height="2" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <Image
+          src="/NuPrego-Logo.png"
+          alt="NuPrego"
+          width={28}
+          height={28}
+          className="mobile-header-logo"
+        />
+        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: '#dfe3e7', letterSpacing: '-0.02em' }}>
+          NuPrego
+        </span>
+      </header>
+
+      {/* Backdrop */}
+      {mobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
+        <div className="sidebar-mobile-close">
+          <button
+            type="button"
+            className="btn-ghost sidebar-close-icon"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Fechar menu"
+          >
+            ✕
+          </button>
+        </div>
+        {navContent}
+      </aside>
+    </>
   );
 }
