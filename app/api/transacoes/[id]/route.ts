@@ -127,9 +127,20 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
   const { id } = await context.params;
   const { searchParams } = new URL(req.url);
   const grupo = searchParams.get('grupo');
+  const fixasDsde = searchParams.get('fixas_desde');
+  const fixasTodos = searchParams.get('fixas_todos');
 
   if (grupo) {
     const { error } = await supabase.from('transacoes').delete().eq('grupo_parcela', grupo);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  } else if (fixasDsde || fixasTodos) {
+    const { data: thisTx } = await supabase.from('transacoes').select('descricao').eq('id', id).single();
+    if (!thisTx) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
+
+    let delQ = supabase.from('transacoes').delete().eq('tipo', 'fixa').eq('descricao', thisTx.descricao);
+    if (fixasDsde) delQ = delQ.gte('data', fixasDsde);
+
+    const { error } = await delQ;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   } else {
     const { error } = await supabase.from('transacoes').delete().eq('id', id);

@@ -186,7 +186,10 @@ export default function Fixas() {
     setExcluindo(true);
     setErroSalvar(null);
     try {
-      const r = await fetch(`/api/transacoes/${editando.id}`, { method: 'DELETE' });
+      let url = `/api/transacoes/${editando.id}`;
+      if (form.scope === 'desde' && form.scopeData) url += `?fixas_desde=${form.scopeData}`;
+      else if (form.scope === 'todos') url += `?fixas_todos=1`;
+      const r = await fetch(url, { method: 'DELETE' });
       if (!r.ok) { const j = await r.json(); setErroSalvar(j.error || 'Erro ao excluir'); return; }
       setPedirConfirmacao(false);
       setShowModal(false);
@@ -346,8 +349,14 @@ export default function Fixas() {
 
       {pedirConfirmacao && editando && (
         <ConfirmarModal
-          mensagem="Excluir este registro?"
-          detalhe={`${editando.descricao} — somente este mês será removido.`}
+          mensagem="Excluir esta conta fixa?"
+          detalhe={
+            form.scope === 'todos'
+              ? `Todos os ${editando.mesesAtivos} registros de "${editando.descricao}" serão removidos permanentemente.`
+              : form.scope === 'desde' && form.scopeData
+              ? `Registros de "${editando.descricao}" a partir de ${new Date(form.scopeData + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })} serão removidos.`
+              : `Somente o registro mais recente de "${editando.descricao}" será removido. Registros anteriores permanecem.`
+          }
           textoConfirmar="Excluir"
           confirmando={excluindo}
           onConfirmar={excluir}
@@ -455,7 +464,7 @@ export default function Fixas() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                <button type="button" className="btn-danger" onClick={() => setPedirConfirmacao(true)} disabled={salvando}>
+                <button type="button" className="btn-danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>
                   ✕ Excluir
                 </button>
                 <div style={{ flex: 1 }} />
