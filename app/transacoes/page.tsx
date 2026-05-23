@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
+import NovaTransacaoModal from '@/components/NovaTransacaoModal';
+import ConfirmarModal from '@/components/ConfirmarModal';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -21,6 +23,9 @@ export default function Transacoes() {
   const [editando, setEditando] = useState<any>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+  const [showNova, setShowNova] = useState(false);
+  const [confirmarExcluir, setConfirmarExcluir] = useState<any>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const [busca, setBusca] = useState('');
   const [filtroCartao, setFiltroCartao] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
@@ -57,12 +62,7 @@ export default function Transacoes() {
     setMes(m); setAno(a);
   };
 
-  const abrirNova = () => {
-    setEditando(null);
-    setErroSalvar(null);
-    setForm({ descricao: '', valor: '', data: now.toISOString().split('T')[0], tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [], total_parcelas: '1' });
-    setShowModal(true);
-  };
+  const abrirNova = () => setShowNova(true);
 
   const abrirEditar = (t: any) => {
     setEditando(t);
@@ -112,13 +112,17 @@ export default function Transacoes() {
     }
   };
 
-  const excluir = async (t: any) => {
-    const msg = t.tipo === 'parcelada' && t.grupo_parcela ? 'Excluir todas as parcelas?' : 'Confirmar exclusão?';
-    if (!confirm(msg)) return;
+  const excluirConfirmado = async () => {
+    if (!confirmarExcluir) return;
+    setExcluindo(true);
+    const t = confirmarExcluir;
     const url = t.tipo === 'parcelada' && t.grupo_parcela
       ? `/api/transacoes/${t.id}?grupo=${t.grupo_parcela}`
       : `/api/transacoes/${t.id}`;
     await fetch(url, { method: 'DELETE' });
+    setConfirmarExcluir(null);
+    setShowModal(false);
+    setExcluindo(false);
     load();
   };
 
@@ -208,12 +212,27 @@ export default function Transacoes() {
                 <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
                   {new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 </span>
-                <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); excluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {showNova && (
+        <NovaTransacaoModal onClose={() => setShowNova(false)} onSaved={() => { setShowNova(false); load(); }} />
+      )}
+
+      {confirmarExcluir && (
+        <ConfirmarModal
+          mensagem={confirmarExcluir.tipo === 'parcelada' && confirmarExcluir.grupo_parcela ? 'Excluir todas as parcelas?' : 'Excluir esta transação?'}
+          detalhe={confirmarExcluir.descricao}
+          textoConfirmar="Excluir"
+          confirmando={excluindo}
+          onConfirmar={excluirConfirmado}
+          onCancelar={() => setConfirmarExcluir(null)}
+        />
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -302,7 +321,7 @@ export default function Transacoes() {
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 {editando && (
-                  <button type="button" className="btn-danger" onClick={() => excluir(editando)}>✕ Excluir</button>
+                  <button type="button" className="btn-danger" onClick={() => setConfirmarExcluir(editando)}>✕ Excluir</button>
                 )}
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
                 <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : editando ? 'Salvar' : 'Adicionar'}</button>

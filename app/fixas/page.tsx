@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
+import ConfirmarModal from '@/components/ConfirmarModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -50,6 +51,7 @@ export default function Fixas() {
   const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao', scope: 'single' as 'single' | 'desde' | 'todos', scopeData: '' });
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [pedirConfirmacao, setPedirConfirmacao] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -186,6 +188,7 @@ export default function Fixas() {
     try {
       const r = await fetch(`/api/transacoes/${editando.id}`, { method: 'DELETE' });
       if (!r.ok) { const j = await r.json(); setErroSalvar(j.error || 'Erro ao excluir'); return; }
+      setPedirConfirmacao(false);
       setShowModal(false);
       load();
     } catch {
@@ -341,6 +344,17 @@ export default function Fixas() {
         </div>
       )}
 
+      {pedirConfirmacao && editando && (
+        <ConfirmarModal
+          mensagem="Excluir este registro?"
+          detalhe={`${editando.descricao} — somente este mês será removido.`}
+          textoConfirmar="Excluir"
+          confirmando={excluindo}
+          onConfirmar={excluir}
+          onCancelar={() => setPedirConfirmacao(false)}
+        />
+      )}
+
       {showModal && editando && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -441,8 +455,8 @@ export default function Fixas() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                <button type="button" className="btn-danger" onClick={excluir} disabled={excluindo || salvando} style={{ opacity: excluindo ? 0.6 : 1 }}>
-                  {excluindo ? 'Excluindo...' : '✕ Excluir'}
+                <button type="button" className="btn-danger" onClick={() => setPedirConfirmacao(true)} disabled={salvando}>
+                  ✕ Excluir
                 </button>
                 <div style={{ flex: 1 }} />
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import NovaTransacaoModal from '@/components/NovaTransacaoModal';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [editRenda, setEditRenda] = useState(false);
   const [renda, setRenda] = useState('');
+  const [showNova, setShowNova] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,6 +69,7 @@ export default function Dashboard() {
           <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
           <div className="month-display">{MESES[mes-1]} {ano}</div>
           <button className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
+          <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
         </div>
       </div>
 
@@ -200,6 +203,10 @@ export default function Dashboard() {
           ))
         }
       </div>
+
+      {showNova && (
+        <NovaTransacaoModal onClose={() => setShowNova(false)} onSaved={() => { setShowNova(false); load(); }} />
+      )}
 
       {/* Modal renda */}
       {editRenda && (
