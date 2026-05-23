@@ -22,9 +22,11 @@ export async function GET(req: NextRequest) {
     const [ano, m] = mes.split('-');
     const anoN = parseInt(ano), mesN = parseInt(m);
     const mesPrefix = `${ano}-${m.padStart(2, '0')}`;
+    const ultimoDia = new Date(anoN, mesN, 0).getDate();
+    const mesUltimoDia = `${mesPrefix}-${String(ultimoDia).padStart(2, '0')}`;
     // inclui registros com fatura_mes correto OU fatura_mes nulo mas data no mês (fallback pré-migração)
     query = query.or(
-      `and(fatura_ano.eq.${anoN},fatura_mes.eq.${mesN}),and(fatura_mes.is.null,data.gte.${mesPrefix}-01,data.lte.${mesPrefix}-31)`
+      `and(fatura_ano.eq.${anoN},fatura_mes.eq.${mesN}),and(fatura_mes.is.null,data.gte.${mesPrefix}-01,data.lte.${mesUltimoDia})`
     );
   }
   if (cartao_id) query = query.eq('cartao_id', cartao_id);
