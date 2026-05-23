@@ -372,11 +372,11 @@ export default function Fixas() {
                   { value: 'desde',  label: 'A partir de uma data',  hint: 'Aplica ao selecionado e todos os posteriores' },
                   { value: 'todos',  label: 'Todos os registros',    hint: 'Atualiza todos os meses desta conta' },
                 ] as const).map(opt => (
-                  <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${form.scope === opt.value ? 'var(--primary)' : 'var(--outline-variant)'}`, background: form.scope === opt.value ? 'rgba(125,99,255,0.08)' : 'transparent', transition: 'border-color 0.15s, background 0.15s' }}>
+                  <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${form.scope === opt.value ? 'var(--primary)' : 'var(--outline-variant)'}`, background: form.scope === opt.value ? 'rgba(125,99,255,0.08)' : 'transparent', transition: 'border-color 0.15s, background 0.15s', overflow: 'hidden' }}>
                     <input type="radio" name="scope" value={opt.value} checked={form.scope === opt.value} onChange={() => setForm(f => ({ ...f, scope: opt.value }))} style={{ marginTop: '2px', accentColor: 'var(--primary)', flexShrink: 0 }} />
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: '13px', color: 'var(--on-surface)', fontWeight: 500 }}>{opt.label}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>{opt.hint}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px', wordBreak: 'break-word' }}>{opt.hint}</div>
                     </div>
                   </label>
                 ))}
