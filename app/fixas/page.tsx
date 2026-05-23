@@ -47,8 +47,9 @@ export default function Fixas() {
   const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<Fixa | null>(null);
-  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao' });
+  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao', scope: 'single' as 'single' | 'desde' | 'todos', scopeData: '' });
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -135,12 +136,15 @@ export default function Fixas() {
 
   const abrirEditar = (g: Fixa) => {
     setEditando(g);
+    setErroSalvar(null);
     setForm({
       descricao: g.descricao,
       valor: String(g.valorAtual),
       cartao_id: String(g.cartaoId || ''),
       categoria_ids: g.categoriaIds ?? (g.categoriaId ? [g.categoriaId] : []),
       meio: g.meioP || 'cartao',
+      scope: 'single',
+      scopeData: '',
     });
     setShowModal(true);
   };
@@ -150,7 +154,10 @@ export default function Fixas() {
     setSalvando(true);
     setErroSalvar(null);
     try {
-      const r = await fetch(`/api/transacoes/${editando.id}`, {
+      let url = `/api/transacoes/${editando.id}`;
+      if (form.scope === 'desde' && form.scopeData) url += `?fixas_desde=${form.scopeData}`;
+      else if (form.scope === 'todos') url += `?fixas_todos=1`;
+      const r = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -169,6 +176,22 @@ export default function Fixas() {
       setErroSalvar('Erro de conexão');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const excluir = async () => {
+    if (!editando) return;
+    setExcluindo(true);
+    setErroSalvar(null);
+    try {
+      const r = await fetch(`/api/transacoes/${editando.id}`, { method: 'DELETE' });
+      if (!r.ok) { const j = await r.json(); setErroSalvar(j.error || 'Erro ao excluir'); return; }
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro de conexão');
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -341,8 +364,29 @@ export default function Fixas() {
               ))}
             </div>
 
-            <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '16px' }}>
-              Edita apenas o registro mais recente desta conta
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '8px' }}>ESCOPO DA ALTERAÇÃO</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {([
+                  { value: 'single', label: 'Apenas este registro', hint: 'Corrige somente o registro mais recente' },
+                  { value: 'desde',  label: 'A partir de uma data',  hint: 'Aplica ao selecionado e todos os posteriores' },
+                  { value: 'todos',  label: 'Todos os registros',    hint: 'Atualiza todos os meses desta conta' },
+                ] as const).map(opt => (
+                  <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${form.scope === opt.value ? 'var(--primary)' : 'var(--outline-variant)'}`, background: form.scope === opt.value ? 'rgba(125,99,255,0.08)' : 'transparent', transition: 'border-color 0.15s, background 0.15s' }}>
+                    <input type="radio" name="scope" value={opt.value} checked={form.scope === opt.value} onChange={() => setForm(f => ({ ...f, scope: opt.value }))} style={{ marginTop: '2px', accentColor: 'var(--primary)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '13px', color: 'var(--on-surface)', fontWeight: 500 }}>{opt.label}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px' }}>{opt.hint}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {form.scope === 'desde' && (
+                <div style={{ marginTop: '10px' }}>
+                  <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>A PARTIR DE (DATA)</label>
+                  <input type="date" aria-label="Data de início do escopo" value={form.scopeData} onChange={e => setForm(f => ({ ...f, scopeData: e.target.value }))} />
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -384,9 +428,15 @@ export default function Fixas() {
                   ❌ {erroSalvar}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : 'Salvar'}</button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
+                <button type="button" className="btn-danger" onClick={excluir} disabled={excluindo || salvando} style={{ opacity: excluindo ? 0.6 : 1 }}>
+                  {excluindo ? 'Excluindo...' : '✕ Excluir'}
+                </button>
+                <div style={{ flex: 1 }} />
+                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} style={{ opacity: salvando ? 0.6 : 1 }}>
+                  {salvando ? 'Salvando...' : 'Salvar'}
+                </button>
               </div>
             </div>
           </div>

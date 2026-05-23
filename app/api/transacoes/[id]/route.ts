@@ -18,6 +18,40 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   const catId = catIds[0] ?? null;
   const fechamento = await getFechamento(body.cartao_id || null);
 
+  // ── Fixas bulk update ──
+  const fixasDsde = searchParams.get('fixas_desde');
+  const fixasTodos = searchParams.get('fixas_todos');
+
+  if (fixasDsde || fixasTodos) {
+    const { data: thisTx } = await supabase.from('transacoes').select('descricao').eq('id', id).single();
+    if (!thisTx) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
+
+    let matchQ = supabase.from('transacoes').select('id, data').eq('tipo', 'fixa').eq('descricao', thisTx.descricao);
+    if (fixasDsde) matchQ = matchQ.gte('data', fixasDsde);
+
+    const { data: matches, error: matchErr } = await matchQ;
+    if (matchErr) return NextResponse.json({ error: matchErr.message }, { status: 500 });
+
+    const descAtualizada = body.descricao && body.descricao !== thisTx.descricao ? body.descricao : null;
+
+    for (const m of matches || []) {
+      const { fatura_ano, fatura_mes } = calcFatura(m.data, fechamento);
+      const upd: Record<string, unknown> = {
+        valor: body.valor,
+        cartao_id: body.cartao_id || null,
+        categoria_id: catId,
+        categoria_ids: catIds,
+        meio_pagamento: body.meio_pagamento || null,
+        fatura_ano, fatura_mes,
+      };
+      if (descAtualizada) upd.descricao = descAtualizada;
+      const { error: updErr } = await supabase.from('transacoes').update(upd).eq('id', m.id);
+      if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  }
+
   if (grupo) {
     const { data: rows, error: fetchError } = await supabase
       .from('transacoes')
