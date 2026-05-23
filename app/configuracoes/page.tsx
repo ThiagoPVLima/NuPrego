@@ -43,6 +43,8 @@ export default function Configuracoes() {
   const [salvando, setSalvando] = useState(false);
   const [erroCat, setErroCat] = useState<string | null>(null);
   const [deletando, setDeletando] = useState<number | null>(null);
+  const [confirmandoDelete, setConfirmandoDelete] = useState<number | null>(null);
+  const [erroDelete, setErroDelete] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // ── cartões (fechamento) ──
@@ -135,13 +137,14 @@ export default function Configuracoes() {
   };
 
   const deletar = async (id: number) => {
-    if (!confirm('Excluir esta categoria? As transações vinculadas ficarão sem categoria.')) return;
+    setErroDelete(null);
     setDeletando(id);
+    setConfirmandoDelete(null);
     try {
       const r = await fetch(`/api/categorias/${id}`, { method: 'DELETE' });
       if (!r.ok) {
         const json = await r.json();
-        alert(json.error || 'Erro ao excluir');
+        setErroDelete(json.error || 'Erro ao excluir');
       } else {
         loadCats();
       }
@@ -225,6 +228,12 @@ export default function Configuracoes() {
           </button>
         </div>
 
+        {erroDelete && (
+          <div style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            ❌ {erroDelete}
+            <button type="button" className="btn-ghost" onClick={() => setErroDelete(null)} style={{ fontSize: '13px', color: 'var(--outline)' }}>✕</button>
+          </div>
+        )}
         {loadingCats ? (
           <div style={{ color: 'var(--outline)', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', padding: '16px 0' }}>carregando...</div>
         ) : cats.length === 0 ? (
@@ -237,25 +246,38 @@ export default function Configuracoes() {
                 {c.icone && <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>{c.icone}</span>}
                 <span style={{ flex: 1, fontSize: '14px', color: 'var(--on-surface)' }}>{c.nome}</span>
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--outline)' }}>{c.cor}</span>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => abrirEditar(c)}
-                  style={{ fontSize: '13px', padding: '4px 10px', color: 'var(--outline)' }}
-                  title="Editar"
-                >
-                  ✎
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => deletar(c.id)}
-                  disabled={deletando === c.id}
-                  style={{ fontSize: '13px', padding: '4px 10px', color: deletando === c.id ? 'var(--outline)' : '#f87171' }}
-                  title="Excluir"
-                >
-                  {deletando === c.id ? '...' : '✕'}
-                </button>
+                {confirmandoDelete === c.id ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>Confirmar?</span>
+                    <button type="button" className="btn-danger" onClick={() => deletar(c.id)} disabled={deletando === c.id} style={{ fontSize: '12px', padding: '4px 10px' }}>
+                      {deletando === c.id ? '...' : 'Sim'}
+                    </button>
+                    <button type="button" className="btn-secondary" onClick={() => setConfirmandoDelete(null)} style={{ fontSize: '12px', padding: '4px 10px' }}>
+                      Não
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => { setErroDelete(null); abrirEditar(c); }}
+                      style={{ fontSize: '13px', padding: '4px 10px', color: 'var(--outline)' }}
+                      title="Editar"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => setConfirmandoDelete(c.id)}
+                      style={{ fontSize: '13px', padding: '4px 10px', color: '#f87171' }}
+                      title="Excluir"
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>
