@@ -366,20 +366,32 @@ export default function Fixas() {
 
             <div style={{ marginBottom: '16px' }}>
               <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '8px' }}>ESCOPO DA ALTERAÇÃO</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', borderRadius: '8px', border: '1px solid var(--outline-variant)', overflow: 'hidden' }}>
                 {([
-                  { value: 'single', label: 'Apenas este registro', hint: 'Corrige somente o registro mais recente' },
-                  { value: 'desde',  label: 'A partir de uma data',  hint: 'Aplica ao selecionado e todos os posteriores' },
-                  { value: 'todos',  label: 'Todos os registros',    hint: 'Atualiza todos os meses desta conta' },
-                ] as const).map(opt => (
-                  <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${form.scope === opt.value ? 'var(--primary)' : 'var(--outline-variant)'}`, background: form.scope === opt.value ? 'rgba(125,99,255,0.08)' : 'transparent', transition: 'border-color 0.15s, background 0.15s', overflow: 'hidden' }}>
-                    <input type="radio" name="scope" value={opt.value} checked={form.scope === opt.value} onChange={() => setForm(f => ({ ...f, scope: opt.value }))} style={{ marginTop: '2px', accentColor: 'var(--primary)', flexShrink: 0 }} />
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', color: 'var(--on-surface)', fontWeight: 500 }}>{opt.label}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginTop: '2px', wordBreak: 'break-word' }}>{opt.hint}</div>
-                    </div>
-                  </label>
+                  { value: 'single', label: 'Só este' },
+                  { value: 'desde',  label: 'A partir de' },
+                  { value: 'todos',  label: 'Todos' },
+                ] as const).map((opt, i) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, scope: opt.value }))}
+                    style={{
+                      flex: 1, padding: '9px 4px', fontSize: '12px', fontWeight: 500,
+                      background: form.scope === opt.value ? 'var(--primary)' : 'transparent',
+                      color: form.scope === opt.value ? '#fff' : 'var(--outline)',
+                      border: 'none', borderLeft: i > 0 ? '1px solid var(--outline-variant)' : 'none',
+                      cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
                 ))}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '6px', fontFamily: 'JetBrains Mono, monospace' }}>
+                {form.scope === 'single' && 'Corrige somente o registro mais recente'}
+                {form.scope === 'desde'  && 'Aplica a este e a todos os registros posteriores'}
+                {form.scope === 'todos'  && 'Atualiza todos os meses desta conta'}
               </div>
               {form.scope === 'desde' && (
                 <div style={{ marginTop: '10px' }}>
@@ -392,11 +404,11 @@ export default function Fixas() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>DESCRIÇÃO</label>
-                <input value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} />
+                <input aria-label="Descrição" value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} />
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>VALOR (R$)</label>
-                <input type="number" step="0.01" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+                <input type="number" step="0.01" aria-label="Valor em reais" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FORMA DE PAGAMENTO</label>
