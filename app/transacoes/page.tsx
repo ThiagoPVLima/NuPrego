@@ -24,6 +24,7 @@ export default function Transacoes() {
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [showNova, setShowNova] = useState(false);
+  const [novaInit, setNovaInit] = useState<any>(null);
   const [confirmarExcluir, setConfirmarExcluir] = useState<any>(null);
   const [excluindo, setExcluindo] = useState(false);
   const [busca, setBusca] = useState('');
@@ -126,7 +127,10 @@ export default function Transacoes() {
     load();
   };
 
-  const total = txs.reduce((s, t) => s + Number(t.valor), 0);
+  const txsExplicitas = txs.filter((t: any) => !t.projetado);
+  const txsProjetadas = txs.filter((t: any) => t.projetado);
+  const total = txsExplicitas.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const totalProjetado = txsProjetadas.reduce((s: number, t: any) => s + Number(t.valor), 0);
 
   const meioPagamento = (t: any) => {
     if (t.meio_pagamento === 'pix') return { label: 'Pix', cor: meioCor.pix };
@@ -140,7 +144,14 @@ export default function Transacoes() {
       <div className="page-header">
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
-          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{txs.length} itens · {fmt(total)}</div>
+          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
+            {txsExplicitas.length} lançadas · {fmt(total)}
+            {txsProjetadas.length > 0 && (
+              <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                + {txsProjetadas.length} recorrente{txsProjetadas.length > 1 ? 's' : ''} · {fmt(totalProjetado)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="page-header-actions">
           <button type="button" className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
@@ -166,20 +177,48 @@ export default function Transacoes() {
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>
-        <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 110px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
-          <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>DATA</span>
+        <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+          <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
         </div>
 
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
         ) : txs.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhuma transação encontrada</div>
-        ) : txs.map((t: any) => {
+        ) : txs.map((t: any, idx: number) => {
           const mp = meioPagamento(t);
+          const projetado = !!t.projetado;
+          const handleClick = () => {
+            if (projetado) {
+              setNovaInit({
+                descricao: t.descricao,
+                valor: String(t.valor),
+                tipo: t.tipo,
+                meio: t.meio_pagamento || (t.cartao_id ? 'cartao' : 'cartao'),
+                cartao_id: t.cartao_id ? String(t.cartao_id) : '',
+                categoria_ids: Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []),
+              });
+              setShowNova(true);
+            } else {
+              abrirEditar(t);
+            }
+          };
           return (
-            <div key={t.id} className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 110px 90px', cursor: 'pointer' }} onClick={() => abrirEditar(t)}>
+            <div
+              key={projetado ? `proj-${t.descricao}-${idx}` : t.id}
+              className="table-row"
+              style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', cursor: 'pointer', opacity: projetado ? 0.55 : 1 }}
+              onClick={handleClick}
+            >
               <div>
-                <div style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</span>
+                  {projetado && (
+                    <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--surface-high)', padding: '1px 6px', borderRadius: '999px', flexShrink: 0 }}>
+                      recorrente
+                    </span>
+                  )}
+                </div>
                 {(() => {
                   const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
                   const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
@@ -205,14 +244,25 @@ export default function Transacoes() {
               </div>
               <div>
                 <span className="badge" style={{ background: `${tipoCor[t.tipo]}20`, color: tipoCor[t.tipo] }}>
-                  {tipoLabel[t.tipo]}{t.tipo === 'parcelada' ? ` ${t.parcela_atual}/${t.total_parcelas}` : ''}
+                  {tipoLabel[t.tipo]}
                 </span>
+              </div>
+              <div>
+                {t.tipo === 'parcelada' && t.parcela_atual && t.total_parcelas ? (
+                  <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                  {projetado ? '—' : new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 </span>
-                <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                {!projetado && (
+                  <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                )}
               </div>
             </div>
           );
@@ -220,7 +270,11 @@ export default function Transacoes() {
       </div>
 
       {showNova && (
-        <NovaTransacaoModal onClose={() => setShowNova(false)} onSaved={() => { setShowNova(false); load(); }} />
+        <NovaTransacaoModal
+          initialData={novaInit ?? undefined}
+          onClose={() => { setShowNova(false); setNovaInit(null); }}
+          onSaved={() => { setShowNova(false); setNovaInit(null); load(); }}
+        />
       )}
 
       {confirmarExcluir && (
@@ -321,7 +375,7 @@ export default function Transacoes() {
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 {editando && (
-                  <button type="button" className="btn-danger" onClick={() => setConfirmarExcluir(editando)}>✕ Excluir</button>
+                  <button type="button" className="btn-danger" onClick={() => { setShowModal(false); setConfirmarExcluir(editando); }}>✕ Excluir</button>
                 )}
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
                 <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : editando ? 'Salvar' : 'Adicionar'}</button>
