@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { useTheme } from '@/components/ThemeProvider';
 
 const links = [
   { href: '/', label: 'Dashboard', icon: '◉' },
@@ -20,6 +21,7 @@ export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -40,8 +42,8 @@ export default function Sidebar({ userName }: { userName: string }) {
             style={{ borderRadius: '10px', objectFit: 'cover' }}
           />
           <div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', letterSpacing: '-0.02em' }}>NuPrego</div>
-            <div style={{ fontSize: '11px', color: '#464554', marginTop: '1px' }}>Controle de Gastos</div>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>NuPrego</div>
+            <div style={{ fontSize: '11px', color: 'var(--outline-variant)', marginTop: '1px' }}>Controle de Gastos</div>
           </div>
         </div>
       </div>
@@ -63,13 +65,13 @@ export default function Sidebar({ userName }: { userName: string }) {
         })}
       </nav>
 
-      <div style={{ padding: '16px 8px 0', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ fontSize: '11px', color: '#464554', fontFamily: 'JetBrains Mono, monospace' }}>
+      <div style={{ padding: '16px 8px 0', borderTop: '1px solid var(--sidebar-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
           {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase()}
         </div>
         <div style={{
           fontSize: '12px',
-          color: '#8b919a',
+          color: 'var(--outline)',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -79,13 +81,42 @@ export default function Sidebar({ userName }: { userName: string }) {
         </div>
         <button
           type="button"
+          onClick={toggle}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--sidebar-border)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            color: 'var(--outline)',
+            fontSize: '12px',
+            cursor: 'pointer',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-high)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--on-surface-muted)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--outline)';
+          }}
+        >
+          <span style={{ fontSize: '13px' }}>{theme === 'dark' ? '☀' : '☽'}</span>
+          {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+        </button>
+        <button
+          type="button"
           onClick={handleLogout}
           style={{
             background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.06)',
+            border: '1px solid var(--sidebar-border)',
             borderRadius: '8px',
             padding: '8px 12px',
-            color: '#464554',
+            color: 'var(--outline)',
             fontSize: '12px',
             cursor: 'pointer',
             textAlign: 'left',
@@ -94,13 +125,13 @@ export default function Sidebar({ userName }: { userName: string }) {
             gap: '8px',
             transition: 'color 0.15s, border-color 0.15s',
           }}
-          onMouseEnter={(e) => {
+          onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.color = '#f87171';
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.2)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.3)';
           }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = '#464554';
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--outline)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--sidebar-border)';
           }}
         >
           <span style={{ fontSize: '13px' }}>⎋</span>
@@ -133,7 +164,7 @@ export default function Sidebar({ userName }: { userName: string }) {
           height={28}
           className="mobile-header-logo"
         />
-        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: '#dfe3e7', letterSpacing: '-0.02em' }}>
+        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>
           NuPrego
         </span>
       </header>

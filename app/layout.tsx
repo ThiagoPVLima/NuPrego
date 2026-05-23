@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -51,18 +52,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* Apply theme class before first paint to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('nuprego-theme');document.documentElement.classList.add(t==='light'?'light':'dark');})();` }} />
+      </head>
       <body>
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-          {user && (
-            <Sidebar
-              userName={user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? ''}
-            />
-          )}
-          <main className={`main-content${user ? ' with-sidebar' : ''}`}>
-            {children}
-          </main>
-        </div>
+        <ThemeProvider>
+          <div style={{ display: 'flex', minHeight: '100vh' }}>
+            {user && (
+              <Sidebar
+                userName={user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? ''}
+              />
+            )}
+            <main className={`main-content${user ? ' with-sidebar' : ''}`}>
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
