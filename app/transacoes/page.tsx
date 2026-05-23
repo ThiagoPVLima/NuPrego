@@ -113,6 +113,17 @@ export default function Transacoes() {
     }
   };
 
+  const togglePago = async (t: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const novoPago = !t.pago;
+    setTxs(prev => prev.map(tx => tx.id === t.id ? { ...tx, pago: novoPago } : tx));
+    await fetch(`/api/transacoes/${t.id}?pago_only=1`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pago: novoPago }),
+    });
+  };
+
   const excluirConfirmado = async () => {
     if (!confirmarExcluir) return;
     setExcluindo(true);
@@ -256,12 +267,22 @@ export default function Transacoes() {
                   <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
                   {projetado ? '—' : new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 </span>
                 {!projetado && (
-                  <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button
+                      type="button"
+                      title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'}
+                      onClick={e => togglePago(t, e)}
+                      style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}
+                    >
+                      {t.pago ? '✓' : '○'}
+                    </button>
+                    <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                  </div>
                 )}
               </div>
             </div>

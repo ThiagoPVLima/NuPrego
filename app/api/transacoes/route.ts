@@ -85,6 +85,8 @@ export async function POST(req: NextRequest) {
   const catId = catIds[0] ?? null;
   const fechamento = await getFechamento(cartao_id || null);
 
+  const today = new Date().toISOString().split('T')[0];
+
   if (tipo === 'parcelada' && total_parcelas > 1) {
     const grupo = randomUUID();
     const valorParcela = Math.round((valor / total_parcelas) * 100) / 100;
@@ -111,6 +113,7 @@ export async function POST(req: NextRequest) {
         meio_pagamento: meio_pagamento || null,
         parcela_atual: i, total_parcelas, grupo_parcela: grupo,
         fatura_ano, fatura_mes,
+        pago: dataStr <= today,
       });
     }
     const { error } = await supabase.from('transacoes').insert(inserts);
@@ -128,6 +131,7 @@ export async function POST(req: NextRequest) {
     meio_pagamento: meio_pagamento || null,
     parcela_atual: 1, total_parcelas: 1,
     fatura_ano, fatura_mes,
+    pago: data <= today,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

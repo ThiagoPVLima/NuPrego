@@ -7,11 +7,26 @@ const tipoCor: Record<string, string> = { fixa: '#8083ff', parcelada: '#ffb783',
 const tipoLabel: Record<string, string> = { fixa: 'Fixa', parcelada: 'Parcelada', avulsa: 'Avulsa' };
 const LBL = { fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' } as React.CSSProperties;
 
-export default function NovaTransacaoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+interface InitialData {
+  descricao?: string;
+  valor?: string;
+  tipo?: string;
+  meio?: string;
+  cartao_id?: string;
+  categoria_ids?: number[];
+}
+
+export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { onClose: () => void; onSaved: () => void; initialData?: InitialData }) {
   const now = new Date();
   const [form, setForm] = useState({
-    descricao: '', valor: '', data: now.toISOString().split('T')[0],
-    tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [] as number[], total_parcelas: '1',
+    descricao: initialData?.descricao ?? '',
+    valor: initialData?.valor ?? '',
+    data: now.toISOString().split('T')[0],
+    tipo: initialData?.tipo ?? 'avulsa',
+    meio: initialData?.meio ?? 'cartao',
+    cartao_id: initialData?.cartao_id ?? '',
+    categoria_ids: initialData?.categoria_ids ?? [] as number[],
+    total_parcelas: '1',
   });
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
