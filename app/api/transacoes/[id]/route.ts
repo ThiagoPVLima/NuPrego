@@ -27,6 +27,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
     if (!rows?.length) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
+    // Update shared fields
     const { error: sharedErr } = await supabase
       .from('transacoes')
       .update({
@@ -39,25 +40,31 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       .eq('grupo_parcela', grupo);
     if (sharedErr) return NextResponse.json({ error: sharedErr.message }, { status: 500 });
 
-    // Recompute billing month per installment (each has its own date)
-    for (const r of rows) {
-      const { fatura_ano, fatura_mes } = calcFatura(r.data, fechamento);
-      const { error: fatErr } = await supabase
-        .from('transacoes')
-        .update({ fatura_ano, fatura_mes })
-        .eq('id', r.id);
-      if (fatErr) return NextResponse.json({ error: fatErr.message }, { status: 500 });
-    }
-
     const baseAtual = rows[0].descricao.replace(/ \d+\/\d+$/, '');
-    if (body.descricao !== baseAtual) {
-      for (const r of rows) {
-        const { error: descErr } = await supabase
-          .from('transacoes')
-          .update({ descricao: `${body.descricao} ${r.parcela_atual}/${r.total_parcelas}` })
-          .eq('id', r.id);
-        if (descErr) return NextResponse.json({ error: descErr.message }, { status: 500 });
+    const descMudou = body.descricao !== undefined && body.descricao !== baseAtual;
+    const dataBase = body.data_inicio ? new Date(body.data_inicio + 'T12:00:00') : null;
+
+    // Per-row: date shift + billing month + description
+    for (const r of rows) {
+      const update: Record<string, unknown> = {};
+
+      if (dataBase) {
+        const d = new Date(dataBase);
+        d.setMonth(d.getMonth() + (r.parcela_atual - 1));
+        update.data = d.toISOString().split('T')[0];
       }
+
+      const dataParaFatura = (update.data as string) || r.data;
+      const { fatura_ano, fatura_mes } = calcFatura(dataParaFatura, fechamento);
+      update.fatura_ano = fatura_ano;
+      update.fatura_mes = fatura_mes;
+
+      if (descMudou) {
+        update.descricao = `${body.descricao} ${r.parcela_atual}/${r.total_parcelas}`;
+      }
+
+      const { error: rowErr } = await supabase.from('transacoes').update(update).eq('id', r.id);
+      if (rowErr) return NextResponse.json({ error: rowErr.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

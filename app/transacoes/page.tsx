@@ -19,6 +19,8 @@ export default function Transacoes() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [filtroCartao, setFiltroCartao] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
@@ -57,12 +59,14 @@ export default function Transacoes() {
 
   const abrirNova = () => {
     setEditando(null);
+    setErroSalvar(null);
     setForm({ descricao: '', valor: '', data: now.toISOString().split('T')[0], tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [], total_parcelas: '1' });
     setShowModal(true);
   };
 
   const abrirEditar = (t: any) => {
     setEditando(t);
+    setErroSalvar(null);
     const meio = t.meio_pagamento || 'cartao';
     const catIds = Array.isArray(t.categoria_ids) && t.categoria_ids.length
       ? t.categoria_ids
@@ -81,6 +85,8 @@ export default function Transacoes() {
   };
 
   const salvar = async () => {
+    setSalvando(true);
+    setErroSalvar(null);
     const payload = {
       descricao: form.descricao,
       valor: parseFloat(form.valor.replace(',', '.')),
@@ -91,13 +97,19 @@ export default function Transacoes() {
       total_parcelas: parseInt(form.total_parcelas),
       meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
     };
-    if (editando) {
-      await fetch(`/api/transacoes/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    } else {
-      await fetch('/api/transacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    try {
+      const r = editando
+        ? await fetch(`/api/transacoes/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        : await fetch('/api/transacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await r.json();
+      if (!r.ok) { setErroSalvar(json.error || 'Erro ao salvar'); return; }
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro de conexão');
+    } finally {
+      setSalvando(false);
     }
-    setShowModal(false);
-    load();
   };
 
   const excluir = async (t: any) => {
@@ -283,9 +295,17 @@ export default function Transacoes() {
                 </div>
               )}
 
+              {erroSalvar && (
+                <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>
+                  ❌ {erroSalvar}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                {editando && (
+                  <button type="button" className="btn-danger" onClick={() => excluir(editando)}>✕ Excluir</button>
+                )}
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} style={{ flex: 1, justifyContent: 'center' }}>{editando ? 'Salvar' : 'Adicionar'}</button>
+                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : editando ? 'Salvar' : 'Adicionar'}</button>
               </div>
             </div>
           </div>

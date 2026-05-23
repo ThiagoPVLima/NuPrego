@@ -40,9 +40,10 @@ export default function Parcelados() {
   const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<Grupo | null>(null);
-  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao' });
+  const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao', dataInicio: '' });
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,12 +128,14 @@ export default function Parcelados() {
 
   const abrirEditar = (g: Grupo) => {
     setEditando(g);
+    setErroSalvar(null);
     setForm({
       descricao: g.descricao,
       valor: String(g.valorParcela),
       cartao_id: String(g.cartaoId || ''),
       categoria_ids: g.categoriaIds ?? (g.categoriaId ? [g.categoriaId] : []),
       meio: g.meioP || 'cartao',
+      dataInicio: g.dataInicio,
     });
     setShowModal(true);
   };
@@ -154,6 +157,7 @@ export default function Parcelados() {
           cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
           categoria_ids: form.categoria_ids,
           meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
+          data_inicio: form.dataInicio || undefined,
         }),
       });
       const json = await r.json();
@@ -164,6 +168,27 @@ export default function Parcelados() {
       setErroSalvar('Erro de conexão');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const excluir = async () => {
+    if (!editando) return;
+    if (!confirm(editando.grupo ? `Excluir todas as ${editando.totalParcelas} parcelas de "${editando.descricao}"?` : `Excluir "${editando.descricao}"?`)) return;
+    setExcluindo(true);
+    setErroSalvar(null);
+    try {
+      const url = editando.grupo
+        ? `/api/transacoes/${editando.id}?grupo=${editando.grupo}`
+        : `/api/transacoes/${editando.id}`;
+      const r = await fetch(url, { method: 'DELETE' });
+      const json = await r.json();
+      if (!r.ok) { setErroSalvar(json.error || 'Erro ao excluir'); return; }
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro de conexão');
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -375,9 +400,15 @@ export default function Parcelados() {
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>DESCRIÇÃO</label>
                 <input value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} />
               </div>
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>VALOR POR PARCELA (R$)</label>
-                <input type="number" step="0.01" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>VALOR POR PARCELA (R$)</label>
+                  <input type="number" step="0.01" aria-label="Valor por parcela" value={form.valor} onChange={e => setForm({ ...form, valor: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>DATA DA 1ª PARCELA</label>
+                  <input type="date" aria-label="Data da primeira parcela" value={form.dataInicio} onChange={e => setForm({ ...form, dataInicio: e.target.value })} />
+                </div>
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FORMA DE PAGAMENTO</label>
@@ -410,8 +441,11 @@ export default function Parcelados() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button type="button" className="btn-danger" onClick={excluir} disabled={excluindo} style={{ opacity: excluindo ? 0.6 : 1 }}>
+                  {excluindo ? '...' : '✕ Excluir'}
+                </button>
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : 'Salvar alterações'}</button>
+                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : 'Salvar'}</button>
               </div>
             </div>
           </div>
