@@ -232,9 +232,9 @@ export default function Configuracoes() {
 
       {/* ── Corrigir parcelados PIX/Dinheiro ── */}
       <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Corrigir parcelados Pix / Dinheiro</div>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Reverter correção Pix / Dinheiro</div>
         <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
-          Parcelados no Pix ou dinheiro devem aparecer um mês antes do pagamento (ex: parcela paga em junho aparece na fatura de maio). Este botão corrige os registros existentes que ainda não foram ajustados.
+          Desfaz o deslocamento de fatura aplicado em parcelados no Pix ou dinheiro, devolvendo cada registro ao mês original da data de pagamento.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <button
@@ -244,13 +244,13 @@ export default function Configuracoes() {
             disabled={recalculando}
             style={{ opacity: recalculando ? 0.6 : 1 }}
           >
-            {recalculando ? 'Corrigindo...' : 'Corrigir agora'}
+            {recalculando ? 'Revertendo...' : 'Desfazer agora'}
           </button>
           {resultadoRecalculo && (
             <span style={{ fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', color: resultadoRecalculo.updated > 0 ? '#6edab4' : 'var(--outline)' }}>
               {resultadoRecalculo.updated > 0
-                ? `✓ ${resultadoRecalculo.updated} registro${resultadoRecalculo.updated !== 1 ? 's' : ''} corrigido${resultadoRecalculo.updated !== 1 ? 's' : ''}`
-                : '✓ Nenhum registro precisava de correção'}
+                ? `✓ ${resultadoRecalculo.updated} registro${resultadoRecalculo.updated !== 1 ? 's' : ''} revertido${resultadoRecalculo.updated !== 1 ? 's' : ''}`
+                : '✓ Nenhum registro precisava ser revertido'}
             </span>
           )}
         </div>
