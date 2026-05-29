@@ -124,6 +124,26 @@ export default function Transacoes() {
     });
   };
 
+  const marcarProjetadaPaga = async (t: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const payload = {
+      descricao: t.descricao,
+      valor: t.valor,
+      data: t.data,
+      tipo: t.tipo,
+      cartao_id: null,
+      categoria_ids: Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []),
+      meio_pagamento: t.meio_pagamento || null,
+      pago: true,
+    };
+    await fetch('/api/transacoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    load();
+  };
+
   const excluirConfirmado = async () => {
     if (!confirmarExcluir) return;
     setExcluindo(true);
@@ -188,106 +208,124 @@ export default function Transacoes() {
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>
-        <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
-          <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
-        </div>
-
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
-        ) : txs.length === 0 ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhuma transação encontrada</div>
-        ) : txs.map((t: any, idx: number) => {
-          const mp = meioPagamento(t);
-          const projetado = !!t.projetado;
-          const handleClick = () => {
-            if (projetado) {
-              setNovaInit({
-                descricao: t.descricao,
-                valor: String(t.valor),
-                tipo: t.tipo,
-                meio: t.meio_pagamento || (t.cartao_id ? 'cartao' : 'cartao'),
-                cartao_id: t.cartao_id ? String(t.cartao_id) : '',
-                categoria_ids: Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []),
-              });
-              setShowNova(true);
-            } else {
-              abrirEditar(t);
-            }
-          };
-          return (
-            <div
-              key={projetado ? `proj-${t.descricao}-${idx}` : t.id}
-              className="table-row"
-              style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', cursor: 'pointer', opacity: projetado ? 0.55 : 1 }}
-              onClick={handleClick}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <span style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</span>
-                  {projetado && (
-                    <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--surface-high)', padding: '1px 6px', borderRadius: '999px', flexShrink: 0 }}>
-                      recorrente
-                    </span>
-                  )}
-                </div>
-                {(() => {
-                  const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
-                  const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
-                  return cats.length > 0 ? (
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
-                      {cats.map((c: any) => (
-                        <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
-                          {c.icone ? `${c.icone} ` : ''}{c.nome}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
-              <div>
-                {mp ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
-                    {mp.label}
-                  </span>
-                ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
-              </div>
-              <div>
-                <span className="badge" style={{ background: `${tipoCor[t.tipo]}20`, color: tipoCor[t.tipo] }}>
-                  {tipoLabel[t.tipo]}
-                </span>
-              </div>
-              <div>
-                {t.tipo === 'parcelada' && t.parcela_atual && t.total_parcelas ? (
-                  <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
-                  </span>
-                ) : (
-                  <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
-                  {projetado ? '—' : new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                </span>
-                {!projetado && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                    <button
-                      type="button"
-                      title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'}
-                      onClick={e => togglePago(t, e)}
-                      style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}
-                    >
-                      {t.pago ? '✓' : '○'}
-                    </button>
-                    <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
-                  </div>
-                )}
-              </div>
+        {/* Wrapper com scroll horizontal para mobile */}
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div style={{ minWidth: '680px' }}>
+            <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+              <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
             </div>
-          );
-        })}
+
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
+            ) : txs.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhuma transação encontrada</div>
+            ) : txs.map((t: any, idx: number) => {
+              const mp = meioPagamento(t);
+              const projetado = !!t.projetado;
+              const semCartao = !t.cartao_id;
+              const handleClick = () => {
+                if (projetado) {
+                  setNovaInit({
+                    descricao: t.descricao,
+                    valor: String(t.valor),
+                    tipo: t.tipo,
+                    meio: t.meio_pagamento || (t.cartao_id ? 'cartao' : 'cartao'),
+                    cartao_id: t.cartao_id ? String(t.cartao_id) : '',
+                    categoria_ids: Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []),
+                  });
+                  setShowNova(true);
+                } else {
+                  abrirEditar(t);
+                }
+              };
+              return (
+                <div
+                  key={projetado ? `proj-${t.descricao}-${idx}` : t.id}
+                  className="table-row"
+                  style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', cursor: 'pointer' }}
+                  onClick={handleClick}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <span style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</span>
+                      {projetado && (
+                        <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--surface-high)', padding: '1px 6px', borderRadius: '999px', flexShrink: 0 }}>
+                          recorrente
+                        </span>
+                      )}
+                    </div>
+                    {(() => {
+                      const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+                      const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
+                      return cats.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
+                          {cats.map((c: any) => (
+                            <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
+                              {c.icone ? `${c.icone} ` : ''}{c.nome}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
+                  <div>
+                    {mp ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
+                        {mp.label}
+                      </span>
+                    ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
+                  </div>
+                  <div>
+                    <span className="badge" style={{ background: `${tipoCor[t.tipo]}20`, color: tipoCor[t.tipo] }}>
+                      {tipoLabel[t.tipo]}
+                    </span>
+                  </div>
+                  <div>
+                    {t.tipo === 'parcelada' && t.parcela_atual && t.total_parcelas ? (
+                      <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                    <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
+                      {projetado ? '—' : new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                    {projetado ? (
+                      /* Botão rápido de marcar como paga — somente fixas sem cartão */
+                      semCartao && (
+                        <button
+                          type="button"
+                          title="Marcar como paga"
+                          onClick={e => marcarProjetadaPaga(t, e)}
+                          style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: '#6edab4', borderRadius: '4px', lineHeight: 1 }}
+                        >
+                          ✓
+                        </button>
+                      )
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button
+                          type="button"
+                          title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'}
+                          onClick={e => togglePago(t, e)}
+                          style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}
+                        >
+                          {t.pago ? '✓' : '○'}
+                        </button>
+                        <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {showNova && (

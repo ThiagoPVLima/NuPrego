@@ -39,10 +39,16 @@ type Secao = {
   totalAnual: number;
 };
 
+type FixaConfig = {
+  ativa: boolean;
+  data_inicio: string | null;
+};
+
 export default function Fixas() {
   const [txs, setTxs] = useState<any[]>([]);
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
+  const [configs, setConfigs] = useState<Record<string, FixaConfig>>({});
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<Filtro>('ativas');
   const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
@@ -50,20 +56,27 @@ export default function Fixas() {
   const [editando, setEditando] = useState<Fixa | null>(null);
   const [form, setForm] = useState({ descricao: '', valor: '', cartao_id: '', categoria_ids: [] as number[], meio: 'cartao', scope: 'single' as 'single' | 'desde' | 'todos', scopeData: '' });
   const [salvando, setSalvando] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [pedirConfirmacao, setPedirConfirmacao] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [t, c, cat] = await Promise.all([
+    const [t, c, cat, cfg] = await Promise.all([
       fetch('/api/transacoes?tipo=fixa').then(r => r.json()),
       fetch('/api/cartoes').then(r => r.json()),
       fetch('/api/categorias').then(r => r.json()),
+      fetch('/api/fixas-config').then(r => r.json()).catch(() => []),
     ]);
     setTxs(Array.isArray(t) ? t : []);
     setCartoes(Array.isArray(c) ? c : []);
     setCategorias(Array.isArray(cat) ? cat : []);
+    const cfgMap: Record<string, FixaConfig> = {};
+    for (const item of (Array.isArray(cfg) ? cfg : [])) {
+      cfgMap[(item.descricao || '').toLowerCase()] = { ativa: item.ativa, data_inicio: item.data_inicio };
+    }
+    setConfigs(cfgMap);
     setLoading(false);
   }, []);
 
@@ -100,7 +113,11 @@ export default function Fixas() {
     return acc;
   }, {} as Record<string, Fixa>);
 
-  const lista = Object.values(grupos).map(g => ({ ...g, ativa: g.ultimaData >= limiteAtiva }));
+  const lista = Object.values(grupos).map(g => {
+    const cfg = configs[g.descricao.toLowerCase()];
+    const ativa = cfg !== undefined ? cfg.ativa : g.ultimaData >= limiteAtiva;
+    return { ...g, ativa };
+  });
 
   const filtradas = lista.filter(g => {
     if (filtro === 'ativas') return g.ativa;
@@ -178,6 +195,33 @@ export default function Fixas() {
       setErroSalvar('Erro de conexão');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const toggleAtiva = async () => {
+    if (!editando) return;
+    setToggling(true);
+    const novaAtiva = !editando.ativa;
+    const hoje = new Date();
+    const firstDayOfMonth = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+    const body: Record<string, unknown> = { descricao: editando.descricao, ativa: novaAtiva };
+    if (!novaAtiva) {
+      body.data_inicio = null;
+    } else {
+      body.data_inicio = firstDayOfMonth;
+    }
+    try {
+      await fetch('/api/fixas-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro ao alterar status');
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -385,6 +429,31 @@ export default function Fixas() {
                   <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: 'var(--on-surface)' }}>{i.value}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Status ativa/inativa */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--surface-low)', borderRadius: '10px', marginBottom: '20px', border: `1px solid ${editando.ativa ? 'rgba(110,218,180,0.2)' : 'var(--outline-variant)'}` }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '3px' }}>STATUS</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: editando.ativa ? '#6edab4' : 'var(--outline)', fontFamily: 'Manrope, sans-serif' }}>
+                  {editando.ativa ? '⊙ Ativa' : '◌ Inativa'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleAtiva}
+                disabled={toggling}
+                style={{
+                  padding: '8px 16px', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: 'none', cursor: toggling ? 'wait' : 'pointer',
+                  background: editando.ativa ? 'rgba(239,68,68,0.12)' : 'rgba(110,218,180,0.12)',
+                  color: editando.ativa ? '#f87171' : '#6edab4',
+                  opacity: toggling ? 0.6 : 1,
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {toggling ? '...' : editando.ativa ? 'Desativar' : 'Ativar'}
+              </button>
             </div>
 
             <div style={{ marginBottom: '16px' }}>

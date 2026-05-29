@@ -43,10 +43,42 @@ export async function GET(req: NextRequest) {
   if (mes && (!tipo || tipo === 'fixa') && !cartao_id && !categoria_id) {
     const [ano, m] = mes.split('-');
     const mesPrefix = `${ano}-${m.padStart(2, '0')}`;
+    const firstDayOfM = `${mesPrefix}-01`;
+
+    // Carrega fixas_config para saber quais estão desativadas
+    let fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
+    try {
+      const { data: cfgs } = await supabase.from('fixas_config').select('descricao, ativa, data_inicio');
+      for (const c of cfgs || []) {
+        fixasConfig[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+      }
+    } catch { /* tabela ainda não existe, projeta tudo normalmente */ }
+
+    // Número de meses entre duas datas YYYY-MM-DD (a deve ser <= b)
+    const monthsBetween = (a: string, b: string): number => {
+      const [ay, am] = a.split('-').map(Number);
+      const [by, bm] = b.split('-').map(Number);
+      return (by - ay) * 12 + (bm - am);
+    };
+
+    // Projeta se:
+    //  1. fixas_config diz "ativa" (respeita data_inicio) → sempre projeta
+    //  2. Sem config: projeta só se último registro foi há ≤ 3 meses do mês pedido
+    //  3. fixas_config diz "inativa" → nunca projeta
+    const shouldProject = (descricao: string, lastRowData: string): boolean => {
+      const cfg = fixasConfig[descricao.toLowerCase()];
+      if (cfg) {
+        if (!cfg.ativa) return false;
+        if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
+        return true; // explicitamente ativa: sem limite de tempo
+      }
+      // Sem config: recorrência natural — projeta só se pagamento recente (≤ 3 meses)
+      return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 3;
+    };
 
     const { data: prevFixas } = await supabase
       .from('transacoes')
-      .select('descricao, valor, tipo, meio_pagamento, cartao_id, categoria_id, categoria_ids, cartoes(id,nome,cor), categorias(id,nome,icone,cor)')
+      .select('descricao, valor, tipo, meio_pagamento, cartao_id, categoria_id, categoria_ids, data, cartoes(id,nome,cor), categorias(id,nome,icone,cor)')
       .eq('tipo', 'fixa')
       .lt('data', `${mesPrefix}-01`)
       .order('data', { ascending: false })
@@ -60,7 +92,9 @@ export async function GET(req: NextRequest) {
     for (const f of prevFixas || []) {
       if (busca && !f.descricao?.toLowerCase().includes(busca.toLowerCase())) continue;
       const key = (f.descricao || '').toLowerCase();
+      // prevFixas está ordenado DESC por data: primeira ocorrência de cada key = mais recente
       if (!thisMonthDescs.has(key) && !projMap.has(key)) {
+        if (!shouldProject(f.descricao || '', f.data)) continue;
         projMap.set(key, { ...f, id: null, projetado: true, data: `${mesPrefix}-01`, fatura_ano: parseInt(ano), fatura_mes: parseInt(m) });
       }
     }
@@ -80,7 +114,7 @@ async function getFechamento(cartao_id: number | null): Promise<number | null> {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento } = body;
+  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito } = body;
   const catIds: number[] = Array.isArray(categoria_ids) ? categoria_ids : [];
   const catId = catIds[0] ?? null;
   const fechamento = await getFechamento(cartao_id || null);
@@ -113,7 +147,7 @@ export async function POST(req: NextRequest) {
         meio_pagamento: meio_pagamento || null,
         parcela_atual: i, total_parcelas, grupo_parcela: grupo,
         fatura_ano, fatura_mes,
-        pago: dataStr <= today,
+        pago: pagoExplicito !== undefined ? pagoExplicito : dataStr <= today,
       });
     }
     const { error } = await supabase.from('transacoes').insert(inserts);
@@ -131,7 +165,7 @@ export async function POST(req: NextRequest) {
     meio_pagamento: meio_pagamento || null,
     parcela_atual: 1, total_parcelas: 1,
     fatura_ano, fatura_mes,
-    pago: data <= today,
+    pago: pagoExplicito !== undefined ? pagoExplicito : data <= today,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
