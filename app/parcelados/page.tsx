@@ -86,7 +86,7 @@ export default function Parcelados() {
       };
     }
     acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual, pago: !!t.pago });
-    if (t.pago) acc[key].pagas++;
+    if (t.data <= hoje || t.pago) acc[key].pagas++;
     if (t.data < acc[key].dataInicio) acc[key].dataInicio = t.data;
     return acc;
   }, {} as Record<string, Grupo>);
