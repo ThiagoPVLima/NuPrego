@@ -321,9 +321,9 @@ export default function Fixas() {
                   style={{
                     padding: '18px 22px',
                     cursor: 'pointer',
-                    borderLeft: `3px solid ${sec.cor}`,
                     borderRadius: isAberta ? '12px 12px 0 0' : '12px',
                     borderBottom: isAberta ? '1px solid transparent' : undefined,
+                    borderTop: `2px solid ${sec.cor}`,
                   }}
                   onClick={() => toggleSecao(sec.key)}
                 >

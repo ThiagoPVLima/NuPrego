@@ -65,7 +65,7 @@ body {
   background: var(--surface);
   color: var(--on-surface);
   min-height: 100vh;
-  transition: background 0.2s, color 0.3s;
+  transition: background 0.2s, color 0.2s;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -107,7 +107,8 @@ body {
   white-space: nowrap;
 }
 .btn-primary:hover { background: #3c3ab8; }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .btn-secondary {
   background: transparent;
@@ -120,10 +121,12 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
   white-space: nowrap;
 }
 .btn-secondary:hover { background: var(--surface-high); color: var(--on-surface); }
+.btn-secondary:active { transform: scale(0.97); }
+.btn-secondary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .btn-ghost {
   background: transparent;
@@ -134,9 +137,11 @@ body {
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 .btn-ghost:hover { background: var(--surface-high); color: var(--on-surface); }
+.btn-ghost:active { transform: scale(0.97); }
+.btn-ghost:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .btn-danger {
   background: rgba(239,68,68,0.12);
@@ -149,6 +154,8 @@ body {
   transition: all 0.15s;
 }
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-danger:active { transform: scale(0.97); }
+.btn-danger:focus-visible { outline: 2px solid #f87171; outline-offset: 2px; }
 
 .btn-nowrap { white-space: nowrap; }
 
@@ -232,7 +239,7 @@ input::placeholder { color: var(--outline); }
 .progress-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.4s ease;
+  transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Table row */
@@ -429,4 +436,13 @@ input::placeholder { color: var(--outline); }
     flex: 1;
     padding: 8px 12px;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
+  .card, .card-low { transition: none; }
+  .sidebar { transition: none; }
+  .btn-primary, .btn-secondary, .btn-ghost, .btn-danger { transition: none; }
+  .progress-fill { transition: none; }
+  .modal-overlay { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
