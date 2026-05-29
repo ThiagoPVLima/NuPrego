@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const firstDayOfM = `${mesPrefix}-01`;
 
     // Carrega fixas_config para saber quais estão desativadas
-    let fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
+    const fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
     try {
       const { data: cfgs } = await supabase.from('fixas_config').select('descricao, ativa, data_inicio');
       for (const c of cfgs || []) {
