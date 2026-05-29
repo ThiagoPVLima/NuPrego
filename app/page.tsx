@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 import NovaTransacaoModal from '@/components/NovaTransacaoModal';
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{data?.quantidade || 0} transações · {MESES[mes-1]} {ano}</div>
         </div>
         <div className="page-header-actions">
@@ -251,7 +251,7 @@ export default function Dashboard() {
         <div className="modal-overlay" onClick={() => setShowLista(null)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#dfe3e7', margin: 0 }}>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
                 {showLista === 'fixas' ? `Fixas de ${MESES[mes-1]}` : `Parcelas de ${MESES[mes-1]}`}
               </h2>
               <button type="button" className="btn-ghost" onClick={() => setShowLista(null)} style={{ fontSize: '18px' }}>✕</button>
@@ -307,7 +307,7 @@ export default function Dashboard() {
       {editRenda && (
         <div className="modal-overlay" onClick={() => setEditRenda(false)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px' }}>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', marginBottom: '16px', color: '#dfe3e7' }}>Renda de {MESES[mes-1]}</div>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', marginBottom: '16px', color: 'var(--on-surface)' }}>Renda de {MESES[mes-1]}</div>
             <input type="number" step="0.01" value={renda} onChange={e => setRenda(e.target.value)} placeholder="0,00" style={{ marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" className="btn-secondary" onClick={() => setEditRenda(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>

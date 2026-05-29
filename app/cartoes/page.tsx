@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -36,7 +36,7 @@ export default function Cartoes() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Cartões</h1>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Cartões</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{cartoes.length} cartões ativos</div>
         </div>
         <button className="btn-primary" onClick={abrirNovo}>+ Novo cartão</button>
@@ -47,7 +47,7 @@ export default function Cartoes() {
           <div key={c.id} className="card" style={{ padding: '24px', borderTop: `3px solid ${c.cor}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
-                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7' }}>{c.nome}</div>
+                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)' }}>{c.nome}</div>
                 <div style={{ fontSize: '12px', color: 'var(--outline)', marginTop: '4px', fontFamily: 'JetBrains Mono, monospace', display: 'flex', gap: '12px' }}>
                   <span>fecha dia {c.fechamento}</span>
                   <span>vence dia {c.vencimento}</span>
@@ -81,7 +81,7 @@ export default function Cartoes() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#dfe3e7', margin: 0 }}>{editando ? 'Editar cartão' : 'Novo cartão'}</h2>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>{editando ? 'Editar cartão' : 'Novo cartão'}</h2>
               <button className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
 import NovaTransacaoModal from '@/components/NovaTransacaoModal';
@@ -178,7 +178,7 @@ export default function Transacoes() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
             {txsFatura.length} lançadas · {fmt(total)}
             {txsProjetadas.length > 0 && (
@@ -453,7 +453,7 @@ export default function Transacoes() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#dfe3e7', margin: 0 }}>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
                 {editando ? 'Editar transação' : 'Nova transação'}
               </h2>
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 const EMOJIS = [
@@ -181,13 +181,13 @@ export default function Configuracoes() {
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Configurações</h1>
+        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Configurações</h1>
         <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Categorias, cartões, importação e informações do sistema</div>
       </div>
 
       {/* ── Cartões — dia de fechamento ── */}
       <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Dia de fechamento dos cartões</div>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)', marginBottom: '6px' }}>Dia de fechamento dos cartões</div>
         <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
           Compras feitas antes do dia de fechamento entram na fatura do mês anterior. Deixe em branco para usar o mês calendário.
         </div>
@@ -232,7 +232,7 @@ export default function Configuracoes() {
 
       {/* ── Corrigir parcelados PIX/Dinheiro ── */}
       <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Reverter correção Pix / Dinheiro</div>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)', marginBottom: '6px' }}>Reverter correção Pix / Dinheiro</div>
         <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
           Desfaz o deslocamento de fatura aplicado em parcelados no Pix ou dinheiro, devolvendo cada registro ao mês original da data de pagamento.
         </div>
@@ -260,7 +260,7 @@ export default function Configuracoes() {
       <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7' }}>Categorias</div>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)' }}>Categorias</div>
             <div style={{ fontSize: '13px', color: 'var(--outline)', marginTop: '3px' }}>{cats.length} categorias cadastradas</div>
           </div>
           <button type="button" className="btn-primary" onClick={abrirNova} style={{ fontSize: '13px', padding: '8px 16px' }}>
@@ -326,7 +326,7 @@ export default function Configuracoes() {
 
       {/* ── Importar Excel ── */}
       <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Importar planilha Excel</div>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)', marginBottom: '6px' }}>Importar planilha Excel</div>
         <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '24px', lineHeight: 1.6 }}>
           Importe seu arquivo <code style={{ background: 'var(--surface-high)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>Contas.xlsx</code> original. O sistema detecta automaticamente meses, cartões, fixas e parcelados.
         </div>
@@ -352,7 +352,7 @@ export default function Configuracoes() {
 
       {/* ── Sobre ── */}
       <div className="card" style={{ padding: '28px' }}>
-        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '20px' }}>Sobre o NuPrego</div>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)', marginBottom: '20px' }}>Sobre o NuPrego</div>
         {[
           ['Banco de dados', 'Supabase (PostgreSQL)'],
           ['Frontend', 'Next.js 15 + Tailwind CSS'],
@@ -372,7 +372,7 @@ export default function Configuracoes() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#dfe3e7', margin: 0 }}>
+              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
                 {editando ? 'Editar categoria' : 'Nova categoria'}
               </h2>
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>

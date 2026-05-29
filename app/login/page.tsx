@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +64,7 @@ export default function LoginPage() {
               fontFamily: 'Manrope, sans-serif',
               fontWeight: 800,
               fontSize: '24px',
-              color: '#dfe3e7',
+              color: 'var(--on-surface)',
               letterSpacing: '-0.03em',
             }}>NuPrego</div>
             <div style={{ fontSize: '13px', color: '#464554', marginTop: '4px' }}>
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '10px',
                 padding: '12px 16px',
-                color: '#dfe3e7',
+                color: 'var(--on-surface)',
                 fontSize: '14px',
                 outline: 'none',
                 width: '100%',
@@ -110,7 +110,7 @@ export default function LoginPage() {
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '10px',
                 padding: '12px 16px',
-                color: '#dfe3e7',
+                color: 'var(--on-surface)',
                 fontSize: '14px',
                 outline: 'none',
                 width: '100%',

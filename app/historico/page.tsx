@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 
 const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -40,7 +40,7 @@ export default function Historico() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Histórico</h1>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Histórico</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Evolução de gastos ao longo do tempo</div>
         </div>
         <div className="page-header-actions">
@@ -89,7 +89,7 @@ export default function Historico() {
                   <div className="progress-track" style={{ height: '5px' }}>
                     <div className="progress-fill" style={{ width: `${pct}%`, background: 'var(--primary-dark)' }}></div>
                   </div>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#dfe3e7', fontWeight: 500 }}>{fmt(d.total)}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--on-surface)', fontWeight: 500 }}>{fmt(d.total)}</span>
                   <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--primary)' }}>{fmt(d.fixas)}</span>
                   <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--tertiary)' }}>{fmt(d.parceladas)}</span>
                   <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--outline)' }}>{d.qtd}</span>
