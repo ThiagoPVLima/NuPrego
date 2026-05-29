@@ -19,6 +19,7 @@ export default function Transacoes() {
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aba, setAba] = useState<'fatura' | 'pix'>('fatura');
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [salvando, setSalvando] = useState(false);
@@ -165,9 +166,6 @@ export default function Transacoes() {
   const total = txsFatura.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalPixParcelado = txsPixParcelado.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalProjetado = txsProjetadas.reduce((s: number, t: any) => s + Number(t.valor), 0);
-  const totalParcelasGeral = txsFatura
-    .filter((t: any) => t.tipo === 'parcelada')
-    .reduce((s: number, t: any) => s + Number(t.valor) * Number(t.total_parcelas || 1), 0);
 
   const meioPagamento = (t: any) => {
     if (t.meio_pagamento === 'pix') return { label: 'Pix', cor: meioCor.pix };
@@ -183,14 +181,19 @@ export default function Transacoes() {
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
             {txsFatura.length} lançadas · {fmt(total)}
-            {totalParcelasGeral > 0 && (
-              <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
-                · parcelas {fmt(totalParcelasGeral)} total
-              </span>
-            )}
             {txsProjetadas.length > 0 && (
               <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
                 + {txsProjetadas.length} recorrente{txsProjetadas.length > 1 ? 's' : ''} · {fmt(totalProjetado)}
+              </span>
+            )}
+            {txsPixParcelado.length > 0 && (
+              <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                · PIX {fmt(totalPixParcelado)}
+              </span>
+            )}
+            {(total + totalPixParcelado) > 0 && txsPixParcelado.length > 0 && (
+              <span style={{ marginLeft: '8px', color: '#ffb783', fontWeight: 600 }}>
+                · total {fmt(total + totalPixParcelado)}
               </span>
             )}
           </div>
@@ -219,18 +222,52 @@ export default function Transacoes() {
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)' }}>
+          {[
+            { key: 'fatura' as const, label: 'Fatura', total: fmt(total) },
+            { key: 'pix' as const, label: 'PIX / Dinheiro', total: fmt(totalPixParcelado) },
+          ].map(t => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setAba(t.key)}
+              style={{
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                borderBottom: aba === t.key ? '2px solid var(--primary)' : '2px solid transparent',
+                color: aba === t.key ? 'var(--primary)' : 'var(--outline)',
+                fontFamily: 'Manrope, sans-serif', fontWeight: aba === t.key ? 700 : 400,
+                fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px',
+                marginBottom: '-1px',
+              }}
+            >
+              {t.label}
+              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', opacity: 0.8 }}>{t.total}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Wrapper com scroll horizontal para mobile */}
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <div style={{ minWidth: '680px' }}>
-            <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
-              <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
-            </div>
+          <div style={{ minWidth: aba === 'pix' ? '560px' : '680px' }}>
+            {aba === 'fatura' && (
+              <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+                <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
+              </div>
+            )}
+            {aba === 'pix' && (
+              <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+                <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>PARCELA</span><span>DATA</span>
+              </div>
+            )}
 
             {loading ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
-            ) : txsFatura.length === 0 && txsProjetadas.length === 0 ? (
+            ) : aba === 'fatura' && txsFatura.length === 0 && txsProjetadas.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhuma transação encontrada</div>
-            ) : [...txsFatura, ...txsProjetadas].map((t: any, idx: number) => {
+            ) : aba === 'pix' && txsPixParcelado.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhum parcelado PIX / Dinheiro neste mês</div>
+            ) : aba === 'fatura' ? [...txsFatura, ...txsProjetadas].map((t: any, idx: number) => {
               const mp = meioPagamento(t);
               const projetado = !!t.projetado;
               const semCartao = !t.cartao_id;
@@ -334,82 +371,64 @@ export default function Transacoes() {
                   </div>
                 </div>
               );
+            }) : txsPixParcelado.map((t: any) => {
+              const mp = meioPagamento(t);
+              return (
+                <div
+                  key={t.id}
+                  className="table-row"
+                  style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', cursor: 'pointer' }}
+                  onClick={() => abrirEditar(t)}
+                >
+                  <div>
+                    <div style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</div>
+                    {(() => {
+                      const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+                      const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
+                      return cats.length > 0 ? (
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
+                          {cats.map((c: any) => (
+                            <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
+                              {c.icone ? `${c.icone} ` : ''}{c.nome}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
+                  <div>
+                    {mp ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
+                        {mp.label}
+                      </span>
+                    ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
+                  </div>
+                  <div>
+                    {t.parcela_atual && t.total_parcelas ? (
+                      <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
+                      </span>
+                    ) : <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                    <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
+                      {new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'} onClick={e => togglePago(t, e)} style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}>
+                        {t.pago ? '✓' : '○'}
+                      </button>
+                      <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                    </div>
+                  </div>
+                </div>
+              );
             })}
           </div>
         </div>
       </div>
-
-      {/* Parcelados Pix / Dinheiro — seção separada */}
-      {!loading && txsPixParcelado.length > 0 && (
-        <div className="card" style={{ overflow: 'hidden', marginTop: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'var(--surface-low)', borderBottom: '1px solid var(--outline-variant)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELADOS PIX / DINHEIRO</span>
-              <span style={{ fontSize: '11px', color: 'var(--outline-variant)', fontFamily: 'JetBrains Mono, monospace' }}>{txsPixParcelado.length} item{txsPixParcelado.length !== 1 ? 's' : ''}</span>
-            </div>
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: '#ffb783' }}>{fmt(totalPixParcelado)}</span>
-          </div>
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-            <div style={{ minWidth: '560px' }}>
-              {txsPixParcelado.map((t: any) => {
-                const mp = meioPagamento(t);
-                return (
-                  <div
-                    key={t.id}
-                    className="table-row"
-                    style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', cursor: 'pointer' }}
-                    onClick={() => abrirEditar(t)}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</div>
-                      {(() => {
-                        const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
-                        const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
-                        return cats.length > 0 ? (
-                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
-                            {cats.map((c: any) => (
-                              <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
-                                {c.icone ? `${c.icone} ` : ''}{c.nome}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null;
-                      })()}
-                    </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
-                    <div>
-                      {mp ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
-                          {mp.label}
-                        </span>
-                      ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
-                    </div>
-                    <div>
-                      {t.parcela_atual && t.total_parcelas ? (
-                        <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                          {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
-                        </span>
-                      ) : <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                      <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
-                        {new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'} onClick={e => togglePago(t, e)} style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}>
-                          {t.pago ? '✓' : '○'}
-                        </button>
-                        <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {showNova && (
         <NovaTransacaoModal
