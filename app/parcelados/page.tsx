@@ -134,49 +134,6 @@ export default function Parcelados() {
     });
   };
 
-  const adiantarParcela = async (g: Grupo, gKey: string, qual: 'proxima' | 'ultima', e: React.MouseEvent) => {
-    e.stopPropagation();
-    const futuras = g.parcelas.filter(p => p.data > hoje);
-    const parcela = qual === 'proxima'
-      ? futuras.sort((a, b) => a.data.localeCompare(b.data))[0]
-      : futuras.sort((a, b) => b.data.localeCompare(a.data))[0];
-    if (!parcela) return;
-    setAdiantando({ key: gKey, qual });
-    try {
-      await fetch(`/api/transacoes/${parcela.id}?adiantar=1`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      load();
-    } finally {
-      setAdiantando(null);
-    }
-  };
-
-  const marcarTudoPago = async (g: Grupo, gKey: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMarcandoPago(gKey);
-    try {
-      if (g.grupo) {
-        await fetch(`/api/transacoes/${g.id}?pago_grupo=1`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ grupo_parcela: g.grupo }),
-        });
-      } else {
-        await fetch(`/api/transacoes/${g.id}?pago_only=1`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pago: true }),
-        });
-      }
-      load();
-    } finally {
-      setMarcandoPago(null);
-    }
-  };
-
   const abrirEditar = (g: Grupo) => {
     setEditando(g);
     setErroSalvar(null);
@@ -362,7 +319,6 @@ export default function Parcelados() {
                       const restantes = Math.max(0, g.totalParcelas - g.pagas);
                       const finalizado = g.pagas >= g.totalParcelas;
                       const fillColor = finalizado ? '#6edab4' : pct >= 75 ? '#6edab4' : pct >= 40 ? '#ffb783' : '#8083ff';
-                      const gKey = g.grupo || String(g.id);
 
                       return (
                         <div
@@ -415,77 +371,6 @@ export default function Parcelados() {
                             <div className="progress-track" style={{ height: '5px' }}>
                               <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
                             </div>
-                            {!finalizado && (() => {
-                              const futuras = g.parcelas.filter(p => p.data > hoje);
-                              const proxima = futuras.sort((a, b) => a.data.localeCompare(b.data))[0];
-                              const ultima = futuras.sort((a, b) => b.data.localeCompare(a.data))[0];
-                              const isAdiantandoProxima = adiantando?.key === gKey && adiantando.qual === 'proxima';
-                              const isAdiantandoUltima = adiantando?.key === gKey && adiantando.qual === 'ultima';
-                              const isAdiantandoAny = !!adiantando;
-                              const isMarcandoPago = marcandoPago === gKey;
-                              const isAnyLoading = isAdiantandoAny || !!marcandoPago;
-
-                              const btnBase: React.CSSProperties = {
-                                fontSize: '11px',
-                                padding: '4px 9px',
-                                border: '1px solid',
-                                borderRadius: '6px',
-                                cursor: isAnyLoading ? 'wait' : 'pointer',
-                                fontFamily: 'JetBrains Mono, monospace',
-                                lineHeight: 1.4,
-                              };
-
-                              return (
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                                  {proxima && (
-                                    <button
-                                      type="button"
-                                      onClick={e => adiantarParcela(g, gKey, 'proxima', e)}
-                                      disabled={isAnyLoading}
-                                      style={{
-                                        ...btnBase,
-                                        background: 'rgba(128,131,255,0.10)',
-                                        color: '#8083ff',
-                                        borderColor: 'rgba(128,131,255,0.2)',
-                                        opacity: isAnyLoading && !isAdiantandoProxima ? 0.5 : 1,
-                                      }}
-                                    >
-                                      {isAdiantandoProxima ? '...' : `⤴ próxima`}
-                                    </button>
-                                  )}
-                                  {ultima && ultima.id !== proxima?.id && (
-                                    <button
-                                      type="button"
-                                      onClick={e => adiantarParcela(g, gKey, 'ultima', e)}
-                                      disabled={isAnyLoading}
-                                      style={{
-                                        ...btnBase,
-                                        background: 'rgba(128,131,255,0.06)',
-                                        color: '#8083ff',
-                                        borderColor: 'rgba(128,131,255,0.15)',
-                                        opacity: isAnyLoading && !isAdiantandoUltima ? 0.5 : 1,
-                                      }}
-                                    >
-                                      {isAdiantandoUltima ? '...' : `⤴ última`}
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={e => marcarTudoPago(g, gKey, e)}
-                                    disabled={isAnyLoading}
-                                    style={{
-                                      ...btnBase,
-                                      background: 'rgba(110,218,180,0.08)',
-                                      color: '#6edab4',
-                                      borderColor: 'rgba(110,218,180,0.2)',
-                                      opacity: isAnyLoading && !isMarcandoPago ? 0.5 : 1,
-                                    }}
-                                  >
-                                    {isMarcandoPago ? '...' : '✓ Tudo pago'}
-                                  </button>
-                                </div>
-                              );
-                            })()}
                           </div>
                         </div>
                       );
@@ -521,6 +406,72 @@ export default function Parcelados() {
                 </div>
               ))}
             </div>
+
+            {/* Adiantar parcela + Tudo pago */}
+            {editando.pagas < editando.totalParcelas && (() => {
+              const futuras = [...editando.parcelas]
+                .filter(p => p.data > hoje)
+                .sort((a, b) => a.data.localeCompare(b.data));
+              const proxima = futuras[0];
+              const ultima = futuras[futuras.length - 1];
+              const gKey = editando.grupo || String(editando.id);
+              const isLoading = !!adiantando || !!marcandoPago;
+
+              const adiantar = async (parcela: { id: number; parcela_atual: number }, qual: 'proxima' | 'ultima') => {
+                setAdiantando({ key: gKey, qual });
+                try {
+                  await fetch(`/api/transacoes/${parcela.id}?adiantar=1`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+                  });
+                  setShowModal(false); load();
+                } finally { setAdiantando(null); }
+              };
+
+              const marcarPago = async () => {
+                setMarcandoPago(gKey);
+                try {
+                  if (editando.grupo) {
+                    await fetch(`/api/transacoes/${editando.id}?pago_grupo=1`, {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ grupo_parcela: editando.grupo }),
+                    });
+                  } else {
+                    await fetch(`/api/transacoes/${editando.id}?pago_only=1`, {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ pago: true }),
+                    });
+                  }
+                  setShowModal(false); load();
+                } finally { setMarcandoPago(null); }
+              };
+
+              return (
+                <div style={{ padding: '12px 14px', background: 'var(--surface-low)', borderRadius: '10px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '10px' }}>ADIANTAR / QUITAR</div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {proxima && (
+                      <button type="button" className="btn-secondary" disabled={isLoading}
+                        onClick={() => adiantar(proxima, 'proxima')}
+                        style={{ fontSize: '12px', opacity: isLoading ? 0.6 : 1 }}>
+                        {adiantando?.qual === 'proxima' && adiantando.key === gKey ? '...' : `⤴ próxima (${proxima.parcela_atual}/${editando.totalParcelas})`}
+                      </button>
+                    )}
+                    {ultima && ultima.id !== proxima?.id && (
+                      <button type="button" className="btn-secondary" disabled={isLoading}
+                        onClick={() => adiantar(ultima, 'ultima')}
+                        style={{ fontSize: '12px', opacity: isLoading ? 0.6 : 1 }}>
+                        {adiantando?.qual === 'ultima' && adiantando.key === gKey ? '...' : `⤴ última (${ultima.parcela_atual}/${editando.totalParcelas})`}
+                      </button>
+                    )}
+                    <button type="button" className="btn-secondary" disabled={isLoading}
+                      onClick={marcarPago}
+                      style={{ fontSize: '12px', color: '#6edab4', borderColor: 'rgba(110,218,180,0.3)', opacity: isLoading ? 0.6 : 1 }}>
+                      {marcandoPago === gKey ? '...' : '✓ Tudo pago'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '16px' }}>
               Alterações aplicadas a todas as {editando.totalParcelas} parcelas
