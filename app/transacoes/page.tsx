@@ -160,9 +160,12 @@ export default function Transacoes() {
 
   const txsExplicitas = txs.filter((t: any) => !t.projetado);
   const txsProjetadas = txs.filter((t: any) => t.projetado);
-  const total = txsExplicitas.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const txsPixParcelado = txsExplicitas.filter((t: any) => t.tipo === 'parcelada' && !t.cartao_id);
+  const txsFatura = txsExplicitas.filter((t: any) => !(t.tipo === 'parcelada' && !t.cartao_id));
+  const total = txsFatura.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const totalPixParcelado = txsPixParcelado.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalProjetado = txsProjetadas.reduce((s: number, t: any) => s + Number(t.valor), 0);
-  const totalParcelasGeral = txsExplicitas
+  const totalParcelasGeral = txsFatura
     .filter((t: any) => t.tipo === 'parcelada')
     .reduce((s: number, t: any) => s + Number(t.valor) * Number(t.total_parcelas || 1), 0);
 
@@ -179,7 +182,7 @@ export default function Transacoes() {
         <div>
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
-            {txsExplicitas.length} lançadas · {fmt(total)}
+            {txsFatura.length} lançadas · {fmt(total)}
             {totalParcelasGeral > 0 && (
               <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
                 · parcelas {fmt(totalParcelasGeral)} total
@@ -225,9 +228,9 @@ export default function Transacoes() {
 
             {loading ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
-            ) : txs.length === 0 ? (
+            ) : txsFatura.length === 0 && txsProjetadas.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>Nenhuma transação encontrada</div>
-            ) : txs.map((t: any, idx: number) => {
+            ) : [...txsFatura, ...txsProjetadas].map((t: any, idx: number) => {
               const mp = meioPagamento(t);
               const projetado = !!t.projetado;
               const semCartao = !t.cartao_id;
@@ -335,6 +338,78 @@ export default function Transacoes() {
           </div>
         </div>
       </div>
+
+      {/* Parcelados Pix / Dinheiro — seção separada */}
+      {!loading && txsPixParcelado.length > 0 && (
+        <div className="card" style={{ overflow: 'hidden', marginTop: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'var(--surface-low)', borderBottom: '1px solid var(--outline-variant)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELADOS PIX / DINHEIRO</span>
+              <span style={{ fontSize: '11px', color: 'var(--outline-variant)', fontFamily: 'JetBrains Mono, monospace' }}>{txsPixParcelado.length} item{txsPixParcelado.length !== 1 ? 's' : ''}</span>
+            </div>
+            <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: '#ffb783' }}>{fmt(totalPixParcelado)}</span>
+          </div>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div style={{ minWidth: '560px' }}>
+              {txsPixParcelado.map((t: any) => {
+                const mp = meioPagamento(t);
+                return (
+                  <div
+                    key={t.id}
+                    className="table-row"
+                    style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', cursor: 'pointer' }}
+                    onClick={() => abrirEditar(t)}
+                  >
+                    <div>
+                      <div style={{ fontSize: '14px', color: 'var(--on-surface)' }}>{t.descricao}</div>
+                      {(() => {
+                        const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+                        const cats = ids.map((id: number) => categorias.find((c: any) => c.id === id)).filter(Boolean);
+                        return cats.length > 0 ? (
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '3px' }}>
+                            {cats.map((c: any) => (
+                              <span key={c.id} style={{ fontSize: '10px', color: c.cor || '#8083ff', background: `${c.cor || '#8083ff'}18`, padding: '1px 6px', borderRadius: '999px', fontFamily: 'Manrope, sans-serif' }}>
+                                {c.icone ? `${c.icone} ` : ''}{c.nome}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
+                    <div>
+                      {mp ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
+                          {mp.label}
+                        </span>
+                      ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
+                    </div>
+                    <div>
+                      {t.parcela_atual && t.total_parcelas ? (
+                        <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                          {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
+                        </span>
+                      ) : <span style={{ color: 'var(--outline-variant)', fontSize: '12px' }}>—</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                      <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
+                        {new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'} onClick={e => togglePago(t, e)} style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}>
+                          {t.pago ? '✓' : '○'}
+                        </button>
+                        <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showNova && (
         <NovaTransacaoModal
