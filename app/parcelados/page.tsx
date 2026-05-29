@@ -86,7 +86,7 @@ export default function Parcelados() {
       };
     }
     acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual, pago: !!t.pago });
-    if (t.data <= hoje) acc[key].pagas++;
+    if (t.pago) acc[key].pagas++;
     if (t.data < acc[key].dataInicio) acc[key].dataInicio = t.data;
     return acc;
   }, {} as Record<string, Grupo>);
@@ -436,10 +436,12 @@ export default function Parcelados() {
                       body: JSON.stringify({ grupo_parcela: editando.grupo }),
                     });
                   } else {
-                    await fetch(`/api/transacoes/${editando.id}?pago_only=1`, {
-                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ pago: true }),
-                    });
+                    await Promise.all(editando.parcelas.map(p =>
+                      fetch(`/api/transacoes/${p.id}?pago_only=1`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pago: true }),
+                      })
+                    ));
                   }
                   setShowModal(false); load();
                 } finally { setMarcandoPago(null); }
