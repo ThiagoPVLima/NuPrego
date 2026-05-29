@@ -114,14 +114,14 @@ async function getFechamento(cartao_id: number | null): Promise<number | null> {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito } = body;
+  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito, single_parcela, parcela_atual: parcelaAtualParam, grupo_parcela: grupoParam } = body;
   const catIds: number[] = Array.isArray(categoria_ids) ? categoria_ids : [];
   const catId = catIds[0] ?? null;
   const fechamento = await getFechamento(cartao_id || null);
 
   const today = new Date().toISOString().split('T')[0];
 
-  if (tipo === 'parcelada' && total_parcelas > 1) {
+  if (tipo === 'parcelada' && total_parcelas > 1 && !single_parcela) {
     const grupo = randomUUID();
     const valorParcela = Math.round((valor / total_parcelas) * 100) / 100;
     const inserts = [];
@@ -163,7 +163,9 @@ export async function POST(req: NextRequest) {
     categoria_id: catId,
     categoria_ids: catIds,
     meio_pagamento: meio_pagamento || null,
-    parcela_atual: 1, total_parcelas: 1,
+    parcela_atual: parcelaAtualParam ?? 1,
+    total_parcelas: total_parcelas || 1,
+    grupo_parcela: grupoParam || null,
     fatura_ano, fatura_mes,
     pago: pagoExplicito !== undefined ? pagoExplicito : data <= today,
   }).select().single();

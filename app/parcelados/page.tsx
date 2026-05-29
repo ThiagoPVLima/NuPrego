@@ -409,20 +409,51 @@ export default function Parcelados() {
 
             {/* Adiantar parcela + Tudo pago */}
             {editando.pagas < editando.totalParcelas && (() => {
-              const futuras = [...editando.parcelas]
-                .filter(p => !p.pago)
-                .sort((a, b) => a.data.localeCompare(b.data));
+              // Inclui parcelas virtuais (não existem no banco ainda)
+              type PT = { id: number | null; data: string; parcela_atual: number; pago: boolean };
+              const existingMap = new Map(editando.parcelas.map(p => [p.parcela_atual, p as PT]));
+              const ref = [...editando.parcelas].sort((a, b) => a.parcela_atual - b.parcela_atual)[0];
+              const allParcelas: PT[] = [];
+              if (ref) {
+                const rd = new Date(ref.data + 'T12:00:00');
+                const bYear = rd.getFullYear(), bMonth = rd.getMonth() - (ref.parcela_atual - 1), bDay = rd.getDate();
+                for (let i = 1; i <= editando.totalParcelas; i++) {
+                  const ex = existingMap.get(i);
+                  if (ex) { allParcelas.push(ex); continue; }
+                  const tm = bMonth + (i - 1);
+                  const ty = bYear + Math.floor(tm / 12), nm = ((tm % 12) + 12) % 12;
+                  const dataStr = new Date(ty, nm, Math.min(bDay, new Date(ty, nm + 1, 0).getDate()), 12).toISOString().split('T')[0];
+                  allParcelas.push({ id: null, data: dataStr, parcela_atual: i, pago: false });
+                }
+              }
+              const futuras = allParcelas.filter(p => !p.pago).sort((a, b) => a.data.localeCompare(b.data));
               const proxima = futuras[0];
               const ultima = futuras[futuras.length - 1];
               const gKey = editando.grupo || String(editando.id);
               const isLoading = !!adiantando || !!marcandoPago;
 
-              const adiantar = async (parcela: { id: number; parcela_atual: number }, qual: 'proxima' | 'ultima') => {
+              const adiantar = async (parcela: PT, qual: 'proxima' | 'ultima') => {
                 setAdiantando({ key: gKey, qual });
                 try {
-                  await fetch(`/api/transacoes/${parcela.id}?adiantar=1`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
-                  });
+                  if (parcela.id !== null) {
+                    await fetch(`/api/transacoes/${parcela.id}?adiantar=1`, {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+                    });
+                  } else {
+                    // Parcela virtual: cria no banco com hoje como data e pago=true
+                    const hojeStr = new Date().toISOString().split('T')[0];
+                    await fetch('/api/transacoes', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        descricao: `${editando.descricao} ${parcela.parcela_atual}/${editando.totalParcelas}`,
+                        valor: editando.valorParcela, data: hojeStr, tipo: 'parcelada',
+                        cartao_id: editando.cartaoId || null, categoria_ids: editando.categoriaIds,
+                        meio_pagamento: editando.meioP, total_parcelas: editando.totalParcelas,
+                        parcela_atual: parcela.parcela_atual, grupo_parcela: editando.grupo || null,
+                        single_parcela: true, pago: true,
+                      }),
+                    });
+                  }
                   setShowModal(false); load();
                 } finally { setAdiantando(null); }
               };
@@ -522,7 +553,7 @@ export default function Parcelados() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>DESCRIÇÃO</label>
-                <input value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} />
+                <input aria-label="Descrição" value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
