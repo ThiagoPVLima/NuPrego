@@ -54,6 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Apply theme class before first paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('nuprego-theme');document.documentElement.classList.add(t==='light'?'light':'dark');})();` }} />
       </head>

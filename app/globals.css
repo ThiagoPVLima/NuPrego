@@ -65,6 +65,9 @@ body {
   background: var(--surface);
   color: var(--on-surface);
   min-height: 100vh;
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  font-kerning: normal;
   transition: background 0.2s, color 0.2s;
 }
 
@@ -74,7 +77,27 @@ body {
 
 /* Typography */
 .font-display { font-family: 'Manrope', sans-serif; }
-.font-mono-sm { font-family: 'JetBrains Mono', monospace; }
+.font-mono-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Tabular numbers — critical for finance: amounts align on decimal */
+.tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* Heading wrapping */
+h1, h2, h3 { text-wrap: balance; }
+
+/* Uppercase label pattern used throughout the app */
+.label-caps {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  color: var(--outline);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Cards */
 .card {
@@ -166,7 +189,7 @@ input, select, textarea {
   color: var(--on-surface) !important;
   border-radius: 8px;
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-family: 'Inter', sans-serif;
   outline: none;
   width: 100%;
@@ -252,6 +275,7 @@ input::placeholder { color: var(--outline); }
   align-items: center;
   gap: 12px;
   transition: background 0.1s;
+  font-variant-numeric: tabular-nums;
 }
 .table-row:hover { background: var(--row-hover); }
 
