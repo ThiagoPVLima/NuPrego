@@ -40,8 +40,66 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
   if (searchParams.get('pago_grupo')) {
     const { grupo_parcela } = body as { grupo_parcela: string };
+
+    // Carrega todas as parcelas existentes do grupo
+    const { data: rows, error: fetchErr } = await supabase
+      .from('transacoes')
+      .select('id, parcela_atual, total_parcelas, data, descricao, valor, cartao_id, categoria_id, categoria_ids, meio_pagamento')
+      .eq('grupo_parcela', grupo_parcela)
+      .order('parcela_atual', { ascending: true });
+    if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+
+    // Marca todas existentes como pagas
     const { error } = await supabase.from('transacoes').update({ pago: true }).eq('grupo_parcela', grupo_parcela);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Cria parcelas faltantes se o grupo está incompleto
+    if (rows && rows.length > 0) {
+      const totalParcelas = rows[0].total_parcelas as number;
+      if (rows.length < totalParcelas) {
+        const existingNums = new Set(rows.map((r: { parcela_atual: number }) => r.parcela_atual));
+        const refRow = rows[0];
+        const descBase = (refRow.descricao as string).replace(/ \d+\/\d+$/, '');
+        const grupoFechamento = await getFechamento((refRow.cartao_id as number) || null);
+        // Calcula data da 1ª parcela retrocedendo a partir da mais antiga existente
+        const refDate = new Date((refRow.data as string) + 'T12:00:00');
+        const baseYear = refDate.getFullYear();
+        const baseMonth = refDate.getMonth() - ((refRow.parcela_atual as number) - 1);
+        const baseDay = refDate.getDate();
+
+        const toInsert: Record<string, unknown>[] = [];
+        for (let i = 1; i <= totalParcelas; i++) {
+          if (existingNums.has(i)) continue;
+          const targetMonth = baseMonth + (i - 1);
+          const targetYear = baseYear + Math.floor(targetMonth / 12);
+          const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+          const lastDay = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+          const day = Math.min(baseDay, lastDay);
+          const d = new Date(targetYear, normalizedMonth, day, 12, 0, 0);
+          const dataStr = d.toISOString().split('T')[0];
+          const { fatura_ano, fatura_mes } = calcFatura(dataStr, grupoFechamento);
+          toInsert.push({
+            descricao: `${descBase} ${i}/${totalParcelas}`,
+            valor: refRow.valor,
+            data: dataStr,
+            tipo: 'parcelada',
+            cartao_id: refRow.cartao_id,
+            categoria_id: refRow.categoria_id,
+            categoria_ids: refRow.categoria_ids,
+            meio_pagamento: refRow.meio_pagamento,
+            parcela_atual: i,
+            total_parcelas: totalParcelas,
+            grupo_parcela: grupo_parcela,
+            fatura_ano, fatura_mes,
+            pago: true,
+          });
+        }
+        if (toInsert.length) {
+          const { error: insertErr } = await supabase.from('transacoes').insert(toInsert);
+          if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+        }
+      }
+    }
     return NextResponse.json({ success: true });
   }
 

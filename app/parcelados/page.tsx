@@ -436,12 +436,52 @@ export default function Parcelados() {
                       body: JSON.stringify({ grupo_parcela: editando.grupo }),
                     });
                   } else {
+                    // Marca as existentes
                     await Promise.all(editando.parcelas.map(p =>
                       fetch(`/api/transacoes/${p.id}?pago_only=1`, {
                         method: 'PUT', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pago: true }),
                       })
                     ));
+                    // Cria parcelas faltantes (dado legado sem grupo_parcela)
+                    if (editando.parcelas.length < editando.totalParcelas) {
+                      const sorted = [...editando.parcelas].sort((a, b) => a.parcela_atual - b.parcela_atual);
+                      const ref = sorted[0];
+                      const refDate = new Date(ref.data + 'T12:00:00');
+                      const baseMonth = refDate.getMonth() - (ref.parcela_atual - 1);
+                      const baseYear = refDate.getFullYear();
+                      const baseDay = refDate.getDate();
+                      const existentes = new Set(editando.parcelas.map(p => p.parcela_atual));
+                      const inserts = [];
+                      for (let i = 1; i <= editando.totalParcelas; i++) {
+                        if (existentes.has(i)) continue;
+                        const tm = baseMonth + (i - 1);
+                        const ty = baseYear + Math.floor(tm / 12);
+                        const nm = ((tm % 12) + 12) % 12;
+                        const lastDay = new Date(ty, nm + 1, 0).getDate();
+                        const day = Math.min(baseDay, lastDay);
+                        const dataStr = new Date(ty, nm, day, 12).toISOString().split('T')[0];
+                        inserts.push({
+                          descricao: `${editando.descricao} ${i}/${editando.totalParcelas}`,
+                          valor: editando.valorParcela,
+                          data: dataStr,
+                          tipo: 'parcelada',
+                          cartao_id: editando.cartaoId,
+                          categoria_ids: editando.categoriaIds,
+                          meio_pagamento: editando.meioP,
+                          total_parcelas: editando.totalParcelas,
+                          pago: true,
+                        });
+                      }
+                      if (inserts.length) {
+                        await Promise.all(inserts.map(inst =>
+                          fetch('/api/transacoes', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(inst),
+                          })
+                        ));
+                      }
+                    }
                   }
                   setShowModal(false); load();
                 } finally { setMarcandoPago(null); }
