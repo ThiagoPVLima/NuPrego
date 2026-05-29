@@ -182,26 +182,51 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Parcelas do mês */}
-      <div className="card" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELAS DO MÊS</div>
-          <a href="/parcelados" style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none' }}>ver todas →</a>
-        </div>
-        {(data?.parcelasAbertas || []).length === 0
-          ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma parcela este mês</div>
-          : (data?.parcelasAbertas || []).slice(0, 5).map((p: any, i: number) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '8px' }}>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
-                <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {p.parcela_atual}/{p.total_parcelas} parcelas
+      {/* Fixas do mês + Parcelas do mês */}
+      <div className="two-col-grid">
+        {/* Fixas */}
+        <div className="card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FIXAS DO MÊS</div>
+            <a href="/fixas" style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none' }}>ver todas →</a>
+          </div>
+          {(data?.fixasDoMes || []).length === 0
+            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma fixa este mês</div>
+            : (data?.fixasDoMes || []).slice(0, 8).map((f: any, i: number) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <span style={{ fontSize: '12px', color: f.pago ? '#6edab4' : 'var(--outline-variant)', flexShrink: 0 }}>{f.pago ? '✓' : '○'}</span>
+                  <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: f.pago ? 'line-through' : 'none' }}>
+                    {f.descricao}
+                  </span>
                 </div>
+                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: f.pago ? 'var(--outline)' : '#8083ff', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(f.valor))}</div>
               </div>
-              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--tertiary)' }}>{fmt(Number(p.valor))}</div>
-            </div>
-          ))
-        }
+            ))
+          }
+        </div>
+
+        {/* Parcelas */}
+        <div className="card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELAS DO MÊS</div>
+            <a href="/parcelados" style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none' }}>ver todas →</a>
+          </div>
+          {(data?.parcelasAbertas || []).length === 0
+            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma parcela este mês</div>
+            : (data?.parcelasAbertas || []).slice(0, 5).map((p: any, i: number) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {p.parcela_atual}/{p.total_parcelas} parcelas
+                  </div>
+                </div>
+                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: 'var(--tertiary)', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
+              </div>
+            ))
+          }
+        </div>
       </div>
 
       {showNova && (

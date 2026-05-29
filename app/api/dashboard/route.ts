@@ -56,10 +56,13 @@ export async function GET(req: NextRequest) {
   const porCategoria = Object.values(catMap).sort((a: any, b: any) => b.total - a.total).slice(0, 8);
 
   const parcelasAbertas = txs.filter((t: any) => t.tipo === 'parcelada');
+  const fixasDoMes = txs
+    .filter((t: any) => t.tipo === 'fixa')
+    .sort((a: any, b: any) => a.descricao.localeCompare(b.descricao));
 
   return NextResponse.json({
     total, renda, saldo: renda - total,
     quantidade: txs.length,
-    porCartao, porTipo, porCategoria, parcelasAbertas,
+    porCartao, porTipo, porCategoria, parcelasAbertas, fixasDoMes,
   });
 }
