@@ -46,14 +46,71 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   }
 
   if (searchParams.get('pago_fixas')) {
-    const { data: thisTx } = await supabase.from('transacoes').select('descricao').eq('id', id).single();
+    const { data: thisTx } = await supabase.from('transacoes').select('*').eq('id', id).single();
     if (!thisTx) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
-    const { error } = await supabase
+
+    // Busca todas as entradas existentes para esta fixa
+    const { data: allEntries, error: fetchErr } = await supabase
+      .from('transacoes')
+      .select('data')
+      .eq('tipo', 'fixa')
+      .eq('descricao', thisTx.descricao)
+      .order('data', { ascending: true });
+    if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+
+    // Marca todas existentes como pagas
+    const { error: updateErr } = await supabase
       .from('transacoes')
       .update({ pago: true })
       .eq('tipo', 'fixa')
       .eq('descricao', thisTx.descricao);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+    // Determina data de início: fixas_config ou entrada mais antiga
+    let dataInicio: string | null = null;
+    try {
+      const { data: cfgRow } = await supabase
+        .from('fixas_config')
+        .select('data_inicio')
+        .ilike('descricao', thisTx.descricao)
+        .single();
+      dataInicio = cfgRow?.data_inicio ?? null;
+    } catch { /* tabela pode não existir */ }
+    if (!dataInicio && allEntries?.length) dataInicio = allEntries[0].data;
+    if (!dataInicio) return NextResponse.json({ success: true });
+
+    // Cria entradas nos meses faltantes (do início até o mês atual)
+    const existingMonths = new Set((allEntries || []).map((e: { data: string }) => e.data.substring(0, 7)));
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const fixaFechamento = await getFechamento(thisTx.cartao_id || null);
+    const toInsert: Record<string, unknown>[] = [];
+    let cursor = dataInicio.substring(0, 7);
+    while (cursor <= currentYM) {
+      if (!existingMonths.has(cursor)) {
+        const dataStr = `${cursor}-01`;
+        const { fatura_ano, fatura_mes } = calcFatura(dataStr, fixaFechamento);
+        toInsert.push({
+          descricao: thisTx.descricao,
+          valor: thisTx.valor,
+          data: dataStr,
+          tipo: 'fixa',
+          cartao_id: thisTx.cartao_id,
+          categoria_id: thisTx.categoria_id,
+          categoria_ids: thisTx.categoria_ids,
+          meio_pagamento: thisTx.meio_pagamento,
+          fatura_ano, fatura_mes,
+          pago: true,
+        });
+      }
+      const [y, m] = cursor.split('-').map(Number);
+      const next = new Date(y, m, 1);
+      cursor = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    }
+    if (toInsert.length) {
+      const { error: insertErr } = await supabase.from('transacoes').insert(toInsert);
+      if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+    }
     return NextResponse.json({ success: true });
   }
 

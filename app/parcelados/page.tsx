@@ -20,7 +20,7 @@ type Grupo = {
   grupo: string | null;
   id: number;
   dataInicio: string;
-  parcelas: { id: number; data: string; parcela_atual: number }[];
+  parcelas: { id: number; data: string; parcela_atual: number; pago: boolean }[];
 };
 
 type Secao = {
@@ -85,7 +85,7 @@ export default function Parcelados() {
         parcelas: [],
       };
     }
-    acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual });
+    acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual, pago: !!t.pago });
     if (t.data <= hoje) acc[key].pagas++;
     if (t.data < acc[key].dataInicio) acc[key].dataInicio = t.data;
     return acc;
@@ -410,7 +410,7 @@ export default function Parcelados() {
             {/* Adiantar parcela + Tudo pago */}
             {editando.pagas < editando.totalParcelas && (() => {
               const futuras = [...editando.parcelas]
-                .filter(p => p.data > hoje)
+                .filter(p => !p.pago)
                 .sort((a, b) => a.data.localeCompare(b.data));
               const proxima = futuras[0];
               const ultima = futuras[futuras.length - 1];
