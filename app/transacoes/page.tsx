@@ -162,6 +162,9 @@ export default function Transacoes() {
   const txsProjetadas = txs.filter((t: any) => t.projetado);
   const total = txsExplicitas.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalProjetado = txsProjetadas.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const totalParcelasGeral = txsExplicitas
+    .filter((t: any) => t.tipo === 'parcelada')
+    .reduce((s: number, t: any) => s + Number(t.valor) * Number(t.total_parcelas || 1), 0);
 
   const meioPagamento = (t: any) => {
     if (t.meio_pagamento === 'pix') return { label: 'Pix', cor: meioCor.pix };
@@ -177,6 +180,11 @@ export default function Transacoes() {
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: '#dfe3e7', letterSpacing: '-0.02em', margin: 0 }}>Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
             {txsExplicitas.length} lançadas · {fmt(total)}
+            {totalParcelasGeral > 0 && (
+              <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                · parcelas {fmt(totalParcelasGeral)} total
+              </span>
+            )}
             {txsProjetadas.length > 0 && (
               <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
                 + {txsProjetadas.length} recorrente{txsProjetadas.length > 1 ? 's' : ''} · {fmt(totalProjetado)}
