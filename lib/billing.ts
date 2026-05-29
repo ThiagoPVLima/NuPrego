@@ -1,3 +1,8 @@
+export function shiftFaturaBack(fatura_ano: number, fatura_mes: number): { fatura_ano: number; fatura_mes: number } {
+  if (fatura_mes === 1) return { fatura_ano: fatura_ano - 1, fatura_mes: 12 };
+  return { fatura_ano, fatura_mes: fatura_mes - 1 };
+}
+
 export function calcFatura(
   data: string,
   fechamento: number | null | undefined,

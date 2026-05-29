@@ -153,6 +153,20 @@ export default function Configuracoes() {
     }
   };
 
+  const [recalculando, setRecalculando] = useState(false);
+  const [resultadoRecalculo, setResultadoRecalculo] = useState<{ updated: number; total: number } | null>(null);
+
+  const recalcularPix = async () => {
+    setRecalculando(true);
+    setResultadoRecalculo(null);
+    try {
+      const r = await fetch('/api/transacoes/recalcular-pix', { method: 'POST' });
+      setResultadoRecalculo(await r.json());
+    } finally {
+      setRecalculando(false);
+    }
+  };
+
   const importar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setImportando(true); setResultado(null);
@@ -214,6 +228,32 @@ export default function Configuracoes() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── Corrigir parcelados PIX/Dinheiro ── */}
+      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
+        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: '#dfe3e7', marginBottom: '6px' }}>Corrigir parcelados Pix / Dinheiro</div>
+        <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
+          Parcelados no Pix ou dinheiro devem aparecer um mês antes do pagamento (ex: parcela paga em junho aparece na fatura de maio). Este botão corrige os registros existentes que ainda não foram ajustados.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={recalcularPix}
+            disabled={recalculando}
+            style={{ opacity: recalculando ? 0.6 : 1 }}
+          >
+            {recalculando ? 'Corrigindo...' : 'Corrigir agora'}
+          </button>
+          {resultadoRecalculo && (
+            <span style={{ fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', color: resultadoRecalculo.updated > 0 ? '#6edab4' : 'var(--outline)' }}>
+              {resultadoRecalculo.updated > 0
+                ? `✓ ${resultadoRecalculo.updated} registro${resultadoRecalculo.updated !== 1 ? 's' : ''} corrigido${resultadoRecalculo.updated !== 1 ? 's' : ''}`
+                : '✓ Nenhum registro precisava de correção'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Categorias ── */}

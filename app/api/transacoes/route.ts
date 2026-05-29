@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { calcFatura } from '@/lib/billing';
+import { calcFatura, shiftFaturaBack } from '@/lib/billing';
 import { randomUUID } from 'crypto';
 
 export async function GET(req: NextRequest) {
@@ -135,7 +135,8 @@ export async function POST(req: NextRequest) {
       const day = Math.min(dataBase.getDate(), lastDay);
       const d = new Date(targetYear, normalizedMonth, day, 12, 0, 0);
       const dataStr = d.toISOString().split('T')[0];
-      const { fatura_ano, fatura_mes } = calcFatura(dataStr, fechamento);
+      const rawFatura = calcFatura(dataStr, fechamento);
+      const { fatura_ano, fatura_mes } = !cartao_id ? shiftFaturaBack(rawFatura.fatura_ano, rawFatura.fatura_mes) : rawFatura;
       inserts.push({
         descricao: `${descricao} ${i}/${total_parcelas}`,
         valor: valorParcela,
