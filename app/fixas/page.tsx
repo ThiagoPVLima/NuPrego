@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
 import ConfirmarModal from '@/components/ConfirmarModal';
+import NovaTransacaoModal from '@/components/NovaTransacaoModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -58,6 +59,8 @@ export default function Fixas() {
   const [salvando, setSalvando] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [marcandoPago, setMarcandoPago] = useState(false);
+  const [showNova, setShowNova] = useState(false);
   const [pedirConfirmacao, setPedirConfirmacao] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
@@ -245,6 +248,22 @@ export default function Fixas() {
     }
   };
 
+  const marcarTudoPago = async () => {
+    if (!editando) return;
+    setMarcandoPago(true);
+    setErroSalvar(null);
+    try {
+      const r = await fetch(`/api/transacoes/${editando.id}?pago_fixas=1`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!r.ok) { const j = await r.json(); setErroSalvar(j.error || 'Erro ao marcar como pago'); return; }
+      setShowModal(false);
+      load();
+    } catch {
+      setErroSalvar('Erro de conexão');
+    } finally {
+      setMarcandoPago(false);
+    }
+  };
+
   const filtroOpts: { key: Filtro; label: string }[] = [
     { key: 'ativas',   label: '⊙ Ativas' },
     { key: 'todas',    label: '◎ Todas' },
@@ -272,6 +291,14 @@ export default function Fixas() {
               {f.label}
             </button>
           ))}
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ padding: '8px 14px', fontSize: '13px' }}
+            onClick={() => setShowNova(true)}
+          >
+            + Nova fixa
+          </button>
         </div>
       </div>
 
@@ -536,6 +563,17 @@ export default function Fixas() {
                 <button type="button" className="btn-danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>
                   ✕ Excluir
                 </button>
+                {editando.ativa && (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-nowrap"
+                    onClick={marcarTudoPago}
+                    disabled={marcandoPago || salvando}
+                    style={{ opacity: marcandoPago ? 0.6 : 1 }}
+                  >
+                    {marcandoPago ? '...' : '✓ Tudo pago'}
+                  </button>
+                )}
                 <div style={{ flex: 1 }} />
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="button" className="btn-primary" onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} style={{ opacity: salvando ? 0.6 : 1 }}>
@@ -545,6 +583,14 @@ export default function Fixas() {
             </div>
           </div>
         </div>
+      )}
+
+      {showNova && (
+        <NovaTransacaoModal
+          initialData={{ tipo: 'fixa' }}
+          onClose={() => setShowNova(false)}
+          onSaved={() => { setShowNova(false); load(); }}
+        />
       )}
     </div>
   );

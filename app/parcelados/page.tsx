@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
+import NovaTransacaoModal from '@/components/NovaTransacaoModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const hoje = new Date().toISOString().split('T')[0];
@@ -45,7 +46,10 @@ export default function Parcelados() {
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState(false);
-  const [adiantando, setAdiantando] = useState<string | null>(null);
+  const [adiantando, setAdiantando] = useState<{ key: string; qual: 'proxima' | 'ultima' } | null>(null);
+  const [marcandoPago, setMarcandoPago] = useState<string | null>(null);
+  const [showNova, setShowNova] = useState(false);
+  const novaInit = { tipo: 'parcelada' };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -130,15 +134,16 @@ export default function Parcelados() {
     });
   };
 
-  const adiantarProxima = async (g: Grupo, gKey: string, e: React.MouseEvent) => {
+  const adiantarParcela = async (g: Grupo, gKey: string, qual: 'proxima' | 'ultima', e: React.MouseEvent) => {
     e.stopPropagation();
-    const proxima = g.parcelas
-      .filter(p => p.data > hoje)
-      .sort((a, b) => a.data.localeCompare(b.data))[0];
-    if (!proxima) return;
-    setAdiantando(gKey);
+    const futuras = g.parcelas.filter(p => p.data > hoje);
+    const parcela = qual === 'proxima'
+      ? futuras.sort((a, b) => a.data.localeCompare(b.data))[0]
+      : futuras.sort((a, b) => b.data.localeCompare(a.data))[0];
+    if (!parcela) return;
+    setAdiantando({ key: gKey, qual });
     try {
-      await fetch(`/api/transacoes/${proxima.id}?adiantar=1`, {
+      await fetch(`/api/transacoes/${parcela.id}?adiantar=1`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -146,6 +151,29 @@ export default function Parcelados() {
       load();
     } finally {
       setAdiantando(null);
+    }
+  };
+
+  const marcarTudoPago = async (g: Grupo, gKey: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMarcandoPago(gKey);
+    try {
+      if (g.grupo) {
+        await fetch(`/api/transacoes/${g.id}?pago_grupo=1`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grupo_parcela: g.grupo }),
+        });
+      } else {
+        await fetch(`/api/transacoes/${g.id}?pago_only=1`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pago: true }),
+        });
+      }
+      load();
+    } finally {
+      setMarcandoPago(null);
     }
   };
 
@@ -236,6 +264,14 @@ export default function Parcelados() {
           </div>
         </div>
         <div className="page-header-actions">
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ padding: '8px 14px', fontSize: '13px' }}
+            onClick={() => setShowNova(true)}
+          >
+            + Novo parcelado
+          </button>
           {filtroOpts.map(f => (
             <button
               key={f.key}
@@ -326,6 +362,7 @@ export default function Parcelados() {
                       const restantes = Math.max(0, g.totalParcelas - g.pagas);
                       const finalizado = g.pagas >= g.totalParcelas;
                       const fillColor = finalizado ? '#6edab4' : pct >= 75 ? '#6edab4' : pct >= 40 ? '#ffb783' : '#8083ff';
+                      const gKey = g.grupo || String(g.id);
 
                       return (
                         <div
@@ -379,28 +416,72 @@ export default function Parcelados() {
                               <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
                             </div>
                             {!finalizado && (() => {
-                              const gKey = g.grupo || String(g.id);
-                              const proxima = g.parcelas
-                                .filter(p => p.data > hoje)
-                                .sort((a, b) => a.data.localeCompare(b.data))[0];
-                              if (!proxima) return null;
-                              const isLoading = adiantando === gKey;
+                              const futuras = g.parcelas.filter(p => p.data > hoje);
+                              const proxima = futuras.sort((a, b) => a.data.localeCompare(b.data))[0];
+                              const ultima = futuras.sort((a, b) => b.data.localeCompare(a.data))[0];
+                              const isAdiantandoProxima = adiantando?.key === gKey && adiantando.qual === 'proxima';
+                              const isAdiantandoUltima = adiantando?.key === gKey && adiantando.qual === 'ultima';
+                              const isAdiantandoAny = !!adiantando;
+                              const isMarcandoPago = marcandoPago === gKey;
+                              const isAnyLoading = isAdiantandoAny || !!marcandoPago;
+
+                              const btnBase: React.CSSProperties = {
+                                fontSize: '11px',
+                                padding: '4px 9px',
+                                border: '1px solid',
+                                borderRadius: '6px',
+                                cursor: isAnyLoading ? 'wait' : 'pointer',
+                                fontFamily: 'JetBrains Mono, monospace',
+                                lineHeight: 1.4,
+                              };
+
                               return (
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                  {proxima && (
+                                    <button
+                                      type="button"
+                                      onClick={e => adiantarParcela(g, gKey, 'proxima', e)}
+                                      disabled={isAnyLoading}
+                                      style={{
+                                        ...btnBase,
+                                        background: 'rgba(128,131,255,0.10)',
+                                        color: '#8083ff',
+                                        borderColor: 'rgba(128,131,255,0.2)',
+                                        opacity: isAnyLoading && !isAdiantandoProxima ? 0.5 : 1,
+                                      }}
+                                    >
+                                      {isAdiantandoProxima ? '...' : `⤴ próxima`}
+                                    </button>
+                                  )}
+                                  {ultima && ultima.id !== proxima?.id && (
+                                    <button
+                                      type="button"
+                                      onClick={e => adiantarParcela(g, gKey, 'ultima', e)}
+                                      disabled={isAnyLoading}
+                                      style={{
+                                        ...btnBase,
+                                        background: 'rgba(128,131,255,0.06)',
+                                        color: '#8083ff',
+                                        borderColor: 'rgba(128,131,255,0.15)',
+                                        opacity: isAnyLoading && !isAdiantandoUltima ? 0.5 : 1,
+                                      }}
+                                    >
+                                      {isAdiantandoUltima ? '...' : `⤴ última`}
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
-                                    onClick={e => adiantarProxima(g, gKey, e)}
-                                    disabled={!!adiantando}
+                                    onClick={e => marcarTudoPago(g, gKey, e)}
+                                    disabled={isAnyLoading}
                                     style={{
-                                      fontSize: '11px', padding: '4px 12px',
-                                      background: 'rgba(128,131,255,0.10)', color: '#8083ff',
-                                      border: '1px solid rgba(128,131,255,0.2)', borderRadius: '6px',
-                                      cursor: adiantando ? 'wait' : 'pointer',
-                                      fontFamily: 'JetBrains Mono, monospace',
-                                      opacity: adiantando && !isLoading ? 0.5 : 1,
+                                      ...btnBase,
+                                      background: 'rgba(110,218,180,0.08)',
+                                      color: '#6edab4',
+                                      borderColor: 'rgba(110,218,180,0.2)',
+                                      opacity: isAnyLoading && !isMarcandoPago ? 0.5 : 1,
                                     }}
                                   >
-                                    {isLoading ? '...' : `⤴ adiantar ${proxima.parcela_atual}/${g.totalParcelas}`}
+                                    {isMarcandoPago ? '...' : '✓ Tudo pago'}
                                   </button>
                                 </div>
                               );
@@ -500,6 +581,15 @@ export default function Parcelados() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal nova transação */}
+      {showNova && (
+        <NovaTransacaoModal
+          onClose={() => setShowNova(false)}
+          onSaved={() => { setShowNova(false); load(); }}
+          initialData={novaInit}
+        />
       )}
     </div>
   );

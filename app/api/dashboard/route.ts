@@ -6,16 +6,28 @@ export async function GET(req: NextRequest) {
   const ano = parseInt(searchParams.get('ano') || String(new Date().getFullYear()));
   const mes = parseInt(searchParams.get('mes') || String(new Date().getMonth() + 1));
 
-  const [transacoes, cartoes, meses] = await Promise.all([
+  // Calcular próximo mês para buscar parcelados PIX/dinheiro
+  const nextMes = mes === 12 ? 1 : mes + 1;
+  const nextAno = mes === 12 ? ano + 1 : ano;
+
+  const [transacoes, cartoes, meses, pixParceladosNext] = await Promise.all([
     supabase.from('transacoes')
       .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
       .eq('fatura_ano', ano).eq('fatura_mes', mes),
     supabase.from('cartoes').select('*').eq('ativo', true).order('id'),
     supabase.from('meses').select('*').eq('ano', ano).eq('mes', mes).single(),
+    supabase.from('transacoes')
+      .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
+      .eq('tipo', 'parcelada')
+      .is('cartao_id', null)
+      .eq('fatura_ano', nextAno)
+      .eq('fatura_mes', nextMes),
   ]);
 
   const txs = transacoes.data || [];
-  const total = txs.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const pixNext = pixParceladosNext.data || [];
+  const pixParceladosDoMes = pixNext.reduce((s: number, t: any) => s + Number(t.valor), 0);
+  const total = txs.reduce((s: number, t: any) => s + Number(t.valor), 0) + pixParceladosDoMes;
   const renda = Number(meses.data?.renda || 0);
 
   const porCartao = (cartoes.data || [])
@@ -43,7 +55,7 @@ export async function GET(req: NextRequest) {
 
   const porTipo = {
     fixa:      txs.filter((t: any) => t.tipo === 'fixa').reduce((s: number, t: any) => s + Number(t.valor), 0),
-    parcelada: txs.filter((t: any) => t.tipo === 'parcelada').reduce((s: number, t: any) => s + Number(t.valor), 0),
+    parcelada: txs.filter((t: any) => t.tipo === 'parcelada').reduce((s: number, t: any) => s + Number(t.valor), 0) + pixParceladosDoMes,
     avulsa:    txs.filter((t: any) => t.tipo === 'avulsa').reduce((s: number, t: any) => s + Number(t.valor), 0),
   };
 
@@ -55,7 +67,10 @@ export async function GET(req: NextRequest) {
   });
   const porCategoria = Object.values(catMap).sort((a: any, b: any) => b.total - a.total).slice(0, 8);
 
-  const parcelasAbertas = txs.filter((t: any) => t.tipo === 'parcelada');
+  const parcelasAbertas = [
+    ...txs.filter((t: any) => t.tipo === 'parcelada'),
+    ...pixNext,
+  ];
   const fixasDoMes = txs
     .filter((t: any) => t.tipo === 'fixa')
     .sort((a: any, b: any) => a.descricao.localeCompare(b.descricao));
@@ -64,5 +79,6 @@ export async function GET(req: NextRequest) {
     total, renda, saldo: renda - total,
     quantidade: txs.length,
     porCartao, porTipo, porCategoria, parcelasAbertas, fixasDoMes,
+    pixParceladosDoMes,
   });
 }

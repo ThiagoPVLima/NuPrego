@@ -57,6 +57,11 @@ export default function Dashboard() {
   const avulsas = Number(data?.porTipo?.avulsa || 0);
   const rendaVal = Number(data?.renda || 0);
   const saldo = rendaVal - total;
+  const pixParceladosDoMes = Number(data?.pixParceladosDoMes || 0);
+  const nextMesLabel = (() => {
+    const m = mes === 12 ? 1 : mes + 1;
+    return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m - 1];
+  })();
 
   return (
     <div>
@@ -213,6 +218,12 @@ export default function Dashboard() {
             <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELAS DO MÊS</div>
             <button type="button" onClick={() => setShowLista('parceladas')} style={{ fontSize: '12px', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>ver todas →</button>
           </div>
+          {pixParceladosDoMes > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(0,184,212,0.08)', border: '1px solid rgba(0,184,212,0.18)', borderRadius: '8px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '12px', color: '#00b8d4', fontFamily: 'JetBrains Mono, monospace' }}>PIX parcelados de {nextMesLabel}</span>
+              <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '13px', color: '#00b8d4' }}>{fmt(pixParceladosDoMes)}</span>
+            </div>
+          )}
           {(data?.parcelasAbertas || []).length === 0
             ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma parcela este mês</div>
             : (data?.parcelasAbertas || []).slice(0, 5).map((p: any, i: number) => (
@@ -221,9 +232,10 @@ export default function Dashboard() {
                   <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
                   <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
                     {p.parcela_atual}/{p.total_parcelas} parcelas
+                    {!p.cartao_id && <span style={{ color: '#00b8d4', marginLeft: '6px' }}>· {nextMesLabel}</span>}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: 'var(--tertiary)', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
+                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: p.cartao_id ? 'var(--tertiary)' : '#00b8d4', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
               </div>
             ))
           }
@@ -265,17 +277,26 @@ export default function Dashboard() {
               {showLista === 'parceladas' && (
                 (data?.parcelasAbertas || []).length === 0
                   ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma parcela este mês</div>
-                  : (data?.parcelasAbertas || []).map((p: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px' }}>
-                      <div>
-                        <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                          {p.parcela_atual}/{p.total_parcelas} parcelas
-                        </div>
+                  : <>
+                    {pixParceladosDoMes > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(0,184,212,0.08)', border: '1px solid rgba(0,184,212,0.18)', borderRadius: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#00b8d4', fontFamily: 'JetBrains Mono, monospace' }}>PIX parcelados de {nextMesLabel}</span>
+                        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '13px', color: '#00b8d4' }}>{fmt(pixParceladosDoMes)}</span>
                       </div>
-                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: 'var(--tertiary)', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
-                    </div>
-                  ))
+                    )}
+                    {(data?.parcelasAbertas || []).map((p: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {p.parcela_atual}/{p.total_parcelas} parcelas
+                            {!p.cartao_id && <span style={{ color: '#00b8d4', marginLeft: '6px' }}>· {nextMesLabel}</span>}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: p.cartao_id ? 'var(--tertiary)' : '#00b8d4', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
+                      </div>
+                    ))}
+                  </>
               )}
             </div>
           </div>

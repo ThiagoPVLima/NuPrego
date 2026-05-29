@@ -34,21 +34,25 @@ html.light {
   --surface-card: #ffffff;
   --surface-high: #dde0e4;
   --surface-highest: #cdd0d6;
-  --primary: #5557e8;
-  --primary-container: #6264f5;
-  --primary-dark: #3537c9;
-  --secondary: #1a9070;
-  --secondary-container: #1a9070;
-  --tertiary: #c07030;
-  --on-surface: #15191d;
-  --on-surface-muted: #3a3d4a;
-  --outline: #6b6e7e;
-  --outline-variant: #c5c8d4;
+  --primary: #3537c9;
+  --primary-container: #4648e0;
+  --primary-dark: #2b2daa;
+  --secondary: #13755a;
+  --secondary-container: #13755a;
+  --tertiary: #9a5820;
+  /* #0d1114 on #ffffff → ~18:1 */
+  --on-surface: #0d1114;
+  /* #2c2f3c on #ffffff → ~11:1 */
+  --on-surface-muted: #2c2f3c;
+  /* #525568 on #ffffff → ~7:1 (well above 4.5:1) */
+  --outline: #525568;
+  /* #9295a4 used for borders/dividers; still 2.9:1 for decorative use */
+  --outline-variant: #9295a4;
   --sidebar-bg: #ffffff;
-  --sidebar-border: rgba(0,0,0,0.08);
-  --input-bg: rgba(0,0,0,0.04);
-  --row-hover: rgba(0,0,0,0.03);
-  --progress-track-bg: rgba(0,0,0,0.08);
+  --sidebar-border: rgba(0,0,0,0.10);
+  --input-bg: rgba(0,0,0,0.05);
+  --row-hover: rgba(0,0,0,0.04);
+  --progress-track-bg: rgba(0,0,0,0.10);
   color-scheme: light;
 }
 
@@ -146,6 +150,8 @@ body {
 }
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
 
+.btn-nowrap { white-space: nowrap; }
+
 /* Inputs */
 input, select, textarea {
   background: var(--input-bg) !important;
@@ -232,6 +238,8 @@ input::placeholder { color: var(--outline); }
 /* Table row */
 .table-row {
   display: grid;
+  width: 100%;
+  min-width: 0;
   padding: 14px 20px;
   border-bottom: 1px solid var(--sidebar-border);
   align-items: center;

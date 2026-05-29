@@ -38,6 +38,25 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ success: true });
   }
 
+  if (searchParams.get('pago_grupo')) {
+    const { grupo_parcela } = body as { grupo_parcela: string };
+    const { error } = await supabase.from('transacoes').update({ pago: true }).eq('grupo_parcela', grupo_parcela);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
+  if (searchParams.get('pago_fixas')) {
+    const { data: thisTx } = await supabase.from('transacoes').select('descricao').eq('id', id).single();
+    if (!thisTx) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
+    const { error } = await supabase
+      .from('transacoes')
+      .update({ pago: true })
+      .eq('tipo', 'fixa')
+      .eq('descricao', thisTx.descricao);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
   if (fixasDsde || fixasTodos) {
     const { data: thisTx } = await supabase.from('transacoes').select('descricao').eq('id', id).single();
     if (!thisTx) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });

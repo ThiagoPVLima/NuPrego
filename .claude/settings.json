@@ -43,11 +43,19 @@
       "PowerShell(cd \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\"; npx eslint . --ext .ts,.tsx 2>&1 | Select-String -Pattern \"\\(react|@typescript|react-compiler|react-hooks\\)/[\\\\w-]+\" | ForEach-Object { $_.Matches[0].Value } | Sort-Object | Group-Object | Sort-Object Count -Descending | Select-Object Count, Name)",
       "PowerShell(cd \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\"; npx eslint . --ext .ts,.tsx; echo \"EXIT: $LASTEXITCODE\")",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\Documents\\\\Projetos Pessoais\\\\NuPrego\" -Recurse -Force)",
-      "Bash(Select-Object -First 50)"
+      "Bash(Select-Object -First 50)",
+      "Bash(gh repo *)",
+      "Bash(ls \"C:\\\\Users\\\\User\\\\.claude\\\\\" 2>&1)",
+      "Read(//c/Users/User/**)",
+      "Bash(gh api *)",
+      "Bash(mkdir -p \"C:/Users/User/.claude/skills/impeccable\")",
+      "Bash(cp /tmp/impeccable_skill.md \"C:/Users/User/.claude/skills/impeccable/SKILL.md\")",
+      "Edit(~/.claude/skills/emil-design-eng/**)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\Documents\\Projetos Pessoais\\NuPrego\\app\\api\\categorias",
-      "c:\\Users\\User\\.claude\\projects\\c--Users-User-Documents-Projetos-Pessoais-NuPrego\\memory"
+      "c:\\Users\\User\\.claude\\projects\\c--Users-User-Documents-Projetos-Pessoais-NuPrego\\memory",
+      "\\tmp"
     ]
   }
 }
