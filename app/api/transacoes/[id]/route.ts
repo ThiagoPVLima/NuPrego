@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { calcFatura, shiftFaturaBack } from '@/lib/billing';
+import { calcFatura } from '@/lib/billing';
 
 async function getFechamento(cartao_id: number | null): Promise<number | null> {
   if (!cartao_id) return null;
@@ -105,8 +105,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       }
 
       const dataParaFatura = (update.data as string) || r.data;
-      const rawFatura = calcFatura(dataParaFatura, fechamento);
-      const { fatura_ano, fatura_mes } = !body.cartao_id ? shiftFaturaBack(rawFatura.fatura_ano, rawFatura.fatura_mes) : rawFatura;
+      const { fatura_ano, fatura_mes } = calcFatura(dataParaFatura, fechamento);
       update.fatura_ano = fatura_ano;
       update.fatura_mes = fatura_mes;
 
