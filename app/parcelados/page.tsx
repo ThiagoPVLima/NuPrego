@@ -19,6 +19,7 @@ type Grupo = {
   grupo: string | null;
   id: number;
   dataInicio: string;
+  parcelas: { id: number; data: string; parcela_atual: number }[];
 };
 
 type Secao = {
@@ -44,6 +45,7 @@ export default function Parcelados() {
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+  const [adiantando, setAdiantando] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,8 +78,10 @@ export default function Parcelados() {
         grupo: t.grupo_parcela,
         id: t.id,
         dataInicio: t.data,
+        parcelas: [],
       };
     }
+    acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual });
     if (t.data <= hoje) acc[key].pagas++;
     if (t.data < acc[key].dataInicio) acc[key].dataInicio = t.data;
     return acc;
@@ -124,6 +128,25 @@ export default function Parcelados() {
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+  };
+
+  const adiantarProxima = async (g: Grupo, gKey: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const proxima = g.parcelas
+      .filter(p => p.data > hoje)
+      .sort((a, b) => a.data.localeCompare(b.data))[0];
+    if (!proxima) return;
+    setAdiantando(gKey);
+    try {
+      await fetch(`/api/transacoes/${proxima.id}?adiantar=1`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      load();
+    } finally {
+      setAdiantando(null);
+    }
   };
 
   const abrirEditar = (g: Grupo) => {
@@ -355,6 +378,33 @@ export default function Parcelados() {
                             <div className="progress-track" style={{ height: '5px' }}>
                               <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
                             </div>
+                            {!finalizado && (() => {
+                              const gKey = g.grupo || String(g.id);
+                              const proxima = g.parcelas
+                                .filter(p => p.data > hoje)
+                                .sort((a, b) => a.data.localeCompare(b.data))[0];
+                              if (!proxima) return null;
+                              const isLoading = adiantando === gKey;
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={e => adiantarProxima(g, gKey, e)}
+                                    disabled={!!adiantando}
+                                    style={{
+                                      fontSize: '11px', padding: '4px 12px',
+                                      background: 'rgba(128,131,255,0.10)', color: '#8083ff',
+                                      border: '1px solid rgba(128,131,255,0.2)', borderRadius: '6px',
+                                      cursor: adiantando ? 'wait' : 'pointer',
+                                      fontFamily: 'JetBrains Mono, monospace',
+                                      opacity: adiantando && !isLoading ? 0.5 : 1,
+                                    }}
+                                  >
+                                    {isLoading ? '...' : `⤴ adiantar ${proxima.parcela_atual}/${g.totalParcelas}`}
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );

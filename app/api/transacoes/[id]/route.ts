@@ -22,6 +22,16 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   const fixasDsde = searchParams.get('fixas_desde');
   const fixasTodos = searchParams.get('fixas_todos');
 
+  if (searchParams.get('adiantar')) {
+    const hoje = new Date().toISOString().split('T')[0];
+    const { data: tx } = await supabase.from('transacoes').select('cartao_id').eq('id', id).single();
+    const fechamento = await getFechamento(tx?.cartao_id ?? null);
+    const { fatura_ano, fatura_mes } = calcFatura(hoje, fechamento);
+    const { error } = await supabase.from('transacoes').update({ data: hoje, fatura_ano, fatura_mes, pago: true }).eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
   if (searchParams.get('pago_only')) {
     const { error } = await supabase.from('transacoes').update({ pago: body.pago }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
