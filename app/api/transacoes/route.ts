@@ -72,8 +72,8 @@ export async function GET(req: NextRequest) {
         if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
         return true; // explicitamente ativa: sem limite de tempo
       }
-      // Sem config: recorrência natural — projeta só se pagamento recente (≤ 3 meses)
-      return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 3;
+      // Sem config: projeta enquanto fixa for recente (≤ 24 meses = até desativar explicitamente)
+      return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 24;
     };
 
     const { data: prevFixas } = await supabase

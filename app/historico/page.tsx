@@ -47,20 +47,21 @@ export default function Historico() {
 
     for (const t of txs) addTo(txKey(t), t);
 
-    // Horizonte = mês mais distante com parcelada no banco
     const now = new Date();
     const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const horizonte = txs
+
+    // Horizonte das parceladas: último mês com parcela no banco
+    const horizonteParceladas = txs
       .filter(t => t.tipo === 'parcelada')
       .reduce((max, t) => { const k = txKey(t); return k > max ? k : max; }, currentYM);
 
-    // Projetar fixas ativas nos meses sem entrada explícita, até o horizonte
-    const msBetween = (a: string, b: string) => {
-      const [ay, am] = a.split('-').map(Number);
-      const [by, bm] = b.split('-').map(Number);
-      return (by - ay) * 12 + (bm - am);
-    };
-    // última entrada por fixa
+    // Horizonte das fixas: independente — projeta 24 meses a partir de hoje
+    // (aparecem até o usuário desativar, não param quando acabam as parceladas)
+    const d24 = new Date(now.getFullYear(), now.getMonth() + 24, 1);
+    const horizonteFixas = `${d24.getFullYear()}-${String(d24.getMonth() + 1).padStart(2, '0')}`;
+    const horizonteGeral = horizonteFixas > horizonteParceladas ? horizonteFixas : horizonteParceladas;
+
+    // Última entrada por fixa
     const ultimaEntrada: Record<string, { valor: number; mes: string }> = {};
     for (const t of txs.filter(t => t.tipo === 'fixa')) {
       const desc = (t.descricao || '').toLowerCase();
@@ -68,17 +69,17 @@ export default function Historico() {
       if (!ultimaEntrada[desc] || k > ultimaEntrada[desc].mes)
         ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
     }
+
+    // Projetar fixas ativas em todos os meses sem entrada explícita até o horizonte
     for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
       const cfg = cfgMap[desc];
-      if (cfg && !cfg.ativa) continue;
-      const ativa = cfg?.ativa === true || msBetween(ultima, currentYM) <= 3;
-      if (!ativa) continue;
+      if (cfg && !cfg.ativa) continue; // explicitamente desativada → para
       const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
       let [y, m] = ultima.split('-').map(Number);
       let cursor = new Date(y, m, 1); // mês seguinte à última entrada
       while (true) {
         const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-        if (ym > horizonte) break;
+        if (ym > horizonteGeral) break;
         if (!dataInicio || ym >= dataInicio)
           addTo(ym, { tipo: 'fixa', valor });
         cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);

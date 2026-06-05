@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
       return true;
     }
-    return monthsBetween(lastData.substring(0, 7) + '-01', firstDayOfM) <= 3;
+    return monthsBetween(lastData.substring(0, 7) + '-01', firstDayOfM) <= 24;
   };
   const baseTxs = transacoes.data || [];
   const thisMonthDescs = new Set(baseTxs.filter((t: any) => t.tipo === 'fixa').map((t: any) => (t.descricao || '').toLowerCase()));
