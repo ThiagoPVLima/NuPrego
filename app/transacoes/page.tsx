@@ -37,6 +37,13 @@ export default function Transacoes() {
   });
 
   const mesStr = `${ano}-${String(mes).padStart(2, '0')}`;
+  const nextMesStr = (() => {
+    const m = mes === 12 ? 1 : mes + 1;
+    const a = mes === 12 ? ano + 1 : ano;
+    return `${a}-${String(m).padStart(2, '0')}`;
+  })();
+
+  const [pixNextTxs, setPixNextTxs] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,16 +51,24 @@ export default function Transacoes() {
     if (filtroCartao) p.set('cartao_id', filtroCartao);
     if (filtroTipo) p.set('tipo', filtroTipo);
     if (busca) p.set('busca', busca);
-    const [t, c, cat] = await Promise.all([
+    // Pix parcelados do mês seguinte — mesma regra da dash (só quando não filtra por cartão)
+    const pNext = new URLSearchParams({ mes: nextMesStr, tipo: 'parcelada' });
+    const pixNextFetch = filtroCartao
+      ? Promise.resolve([])
+      : fetch(`/api/transacoes?${pNext}`).then(r => r.json()).catch(() => []);
+    const [t, c, cat, pn] = await Promise.all([
       fetch(`/api/transacoes?${p}`).then(r => r.json()),
       fetch('/api/cartoes').then(r => r.json()),
       fetch('/api/categorias').then(r => r.json()),
+      pixNextFetch,
     ]);
     setTxs(Array.isArray(t) ? t : []);
     setCartoes(Array.isArray(c) ? c : []);
     setCategorias(Array.isArray(cat) ? cat : []);
+    // Mantém só os Pix/dinheiro sem cartão (igual ao critério da dash)
+    setPixNextTxs((Array.isArray(pn) ? pn : []).filter((x: any) => !x.cartao_id && !x.projetado));
     setLoading(false);
-  }, [mesStr, filtroCartao, filtroTipo, busca]);
+  }, [mesStr, nextMesStr, filtroCartao, filtroTipo, busca]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -161,8 +176,10 @@ export default function Transacoes() {
 
   const txsExplicitas = txs.filter((t: any) => !t.projetado);
   const txsProjetadas = txs.filter((t: any) => t.projetado);
-  const txsPixParcelado = txsExplicitas.filter((t: any) => t.tipo === 'parcelada' && !t.cartao_id);
+  // Aba Fatura: explícitas sem Pix parcelado do mês atual (elas estão no mês anterior na dash)
   const txsFatura = txsExplicitas.filter((t: any) => !(t.tipo === 'parcelada' && !t.cartao_id));
+  // Aba PIX: mês seguinte (mesma regra da dash — Pix parcelado do próximo mês)
+  const txsPixParcelado = pixNextTxs;
   const total = txsFatura.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalPixParcelado = txsPixParcelado.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalProjetado = txsProjetadas.reduce((s: number, t: any) => s + Number(t.valor), 0);
