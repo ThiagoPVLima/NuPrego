@@ -3,6 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 
 const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+const fmtBar = (v: number) => {
+  if (v >= 10000) return `R$${Math.round(v / 1000)}k`;
+  if (v >= 1000)  return `R$${(v / 1000).toFixed(1).replace('.', ',')}k`;
+  return `R$${Math.round(v)}`;
+};
 
 export default function Historico() {
   const [dados, setDados] = useState<any[]>([]);
@@ -57,14 +62,14 @@ export default function Historico() {
         <>
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>GASTOS MENSAIS</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '130px', overflowX: 'auto', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '168px', overflowX: 'auto', paddingBottom: '8px', overflow: 'visible' }}>
               {[...filtrados].reverse().map((d) => {
-                const h = Math.max(8, (d.total / maxTotal) * 110);
+                const h = Math.max(6, (d.total / maxTotal) * 100);
                 const [y, m] = d.periodo.split('-');
                 return (
-                  <div key={d.periodo} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '48px' }}>
+                  <div key={d.periodo} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '56px', flexShrink: 0 }}>
                     <div style={{ fontSize: '9px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap' }}>
-                      {fmt(d.total).replace('R$\u00A0', 'R$')}
+                      {fmtBar(d.total)}
                     </div>
                     <div style={{ width: '38px', height: `${h}px`, background: 'var(--primary-dark)', borderRadius: '4px 4px 0 0', opacity: 0.85 }}></div>
                     <div style={{ fontSize: '10px', color: 'var(--outline)', textAlign: 'center', lineHeight: 1.3 }}>
