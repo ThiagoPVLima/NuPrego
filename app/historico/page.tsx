@@ -25,9 +25,10 @@ export default function Historico() {
     const txs: any[] = Array.isArray(txsRes) ? txsRes : [];
 
     // fixas_config: saber quais estão ativas
+    const norm = (s: string) => (s || '').toLowerCase().trim();
     const cfgMap: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
     for (const c of (Array.isArray(cfgRes) ? cfgRes : [])) {
-      cfgMap[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+      cfgMap[norm(c.descricao)] = { ativa: !!c.ativa, data_inicio: c.data_inicio };
     }
 
     const txKey = (t: any): string =>
@@ -64,7 +65,7 @@ export default function Historico() {
     // Última entrada por fixa
     const ultimaEntrada: Record<string, { valor: number; mes: string }> = {};
     for (const t of txs.filter(t => t.tipo === 'fixa')) {
-      const desc = (t.descricao || '').toLowerCase();
+      const desc = norm(t.descricao);
       const k = txKey(t);
       if (!ultimaEntrada[desc] || k > ultimaEntrada[desc].mes)
         ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
@@ -73,7 +74,8 @@ export default function Historico() {
     // Projetar fixas ativas em todos os meses sem entrada explícita até o horizonte
     for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
       const cfg = cfgMap[desc];
-      if (cfg && !cfg.ativa) continue; // explicitamente desativada → para
+      // Desativada explicitamente → não projeta (checa ativa===false, não apenas falsy)
+      if (cfg && cfg.ativa === false) continue;
       const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
       let [y, m] = ultima.split('-').map(Number);
       let cursor = new Date(y, m, 1); // mês seguinte à última entrada

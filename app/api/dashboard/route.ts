@@ -33,25 +33,26 @@ export async function GET(req: NextRequest) {
   ]);
 
   // Projeção de fixas sem entrada explícita neste mês (mesma lógica de /api/transacoes)
+  const norm = (s: string) => (s || '').toLowerCase().trim();
   const fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
   for (const c of (fixasConfigRes?.data || [])) {
-    fixasConfig[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+    fixasConfig[norm(c.descricao)] = { ativa: !!c.ativa, data_inicio: c.data_inicio };
   }
   const monthsBetween = (a: string, b: string) => {
     const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
     return (by - ay) * 12 + (bm - am);
   };
   const shouldProject = (descricao: string, lastData: string) => {
-    const cfg = fixasConfig[descricao.toLowerCase()];
+    const cfg = fixasConfig[norm(descricao)];
     if (cfg) {
-      if (!cfg.ativa) return false;
+      if (cfg.ativa === false) return false;
       if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
       return true;
     }
     return monthsBetween(lastData.substring(0, 7) + '-01', firstDayOfM) <= 24;
   };
   const baseTxs = transacoes.data || [];
-  const thisMonthDescs = new Set(baseTxs.filter((t: any) => t.tipo === 'fixa').map((t: any) => (t.descricao || '').toLowerCase()));
+  const thisMonthDescs = new Set(baseTxs.filter((t: any) => t.tipo === 'fixa').map((t: any) => norm(t.descricao)));
   const projMap = new Map<string, any>();
   for (const f of (prevFixasRes.data || [])) {
     const key = (f.descricao || '').toLowerCase();

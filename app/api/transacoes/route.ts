@@ -45,12 +45,14 @@ export async function GET(req: NextRequest) {
     const mesPrefix = `${ano}-${m.padStart(2, '0')}`;
     const firstDayOfM = `${mesPrefix}-01`;
 
+    const norm = (s: string) => (s || '').toLowerCase().trim();
+
     // Carrega fixas_config para saber quais estão desativadas
     const fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
     try {
       const { data: cfgs } = await supabase.from('fixas_config').select('descricao, ativa, data_inicio');
       for (const c of cfgs || []) {
-        fixasConfig[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+        fixasConfig[norm(c.descricao)] = { ativa: !!c.ativa, data_inicio: c.data_inicio };
       }
     } catch { /* tabela ainda não existe, projeta tudo normalmente */ }
 
@@ -63,16 +65,15 @@ export async function GET(req: NextRequest) {
 
     // Projeta se:
     //  1. fixas_config diz "ativa" (respeita data_inicio) → sempre projeta
-    //  2. Sem config: projeta só se último registro foi há ≤ 3 meses do mês pedido
+    //  2. Sem config: projeta até 24 meses (até o usuário desativar explicitamente)
     //  3. fixas_config diz "inativa" → nunca projeta
     const shouldProject = (descricao: string, lastRowData: string): boolean => {
-      const cfg = fixasConfig[descricao.toLowerCase()];
+      const cfg = fixasConfig[norm(descricao)];
       if (cfg) {
-        if (!cfg.ativa) return false;
+        if (cfg.ativa === false) return false;
         if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
         return true; // explicitamente ativa: sem limite de tempo
       }
-      // Sem config: projeta enquanto fixa for recente (≤ 24 meses = até desativar explicitamente)
       return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 24;
     };
 
@@ -85,13 +86,13 @@ export async function GET(req: NextRequest) {
       .limit(500);
 
     const thisMonthDescs = new Set(
-      (data || []).filter((t: any) => t.tipo === 'fixa').map((t: any) => (t.descricao || '').toLowerCase())
+      (data || []).filter((t: any) => t.tipo === 'fixa').map((t: any) => norm(t.descricao))
     );
 
     const projMap = new Map<string, any>();
     for (const f of prevFixas || []) {
       if (busca && !f.descricao?.toLowerCase().includes(busca.toLowerCase())) continue;
-      const key = (f.descricao || '').toLowerCase();
+      const key = norm(f.descricao);
       // prevFixas está ordenado DESC por data: primeira ocorrência de cada key = mais recente
       if (!thisMonthDescs.has(key) && !projMap.has(key)) {
         if (!shouldProject(f.descricao || '', f.data)) continue;
