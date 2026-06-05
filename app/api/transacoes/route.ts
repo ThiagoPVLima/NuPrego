@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Projeta fixas ativas que não têm registro explícito no mês consultado
-  if (mes && (!tipo || tipo === 'fixa') && !categoria_id) {
+  if (mes && (!tipo || tipo === 'fixa')) {
     const [ano, m] = mes.split('-');
     const mesPrefix = `${ano}-${m.padStart(2, '0')}`;
     const firstDayOfM = `${mesPrefix}-01`;
@@ -101,6 +101,11 @@ export async function GET(req: NextRequest) {
 
     let projetadas = Array.from(projMap.values());
     if (cartao_id) projetadas = projetadas.filter(f => String(f.cartao_id) === cartao_id);
+    if (categoria_id) projetadas = projetadas.filter(f =>
+      Array.isArray(f.categoria_ids)
+        ? f.categoria_ids.includes(parseInt(categoria_id))
+        : f.categoria_id === parseInt(categoria_id)
+    );
     const combined = [...(data || []), ...projetadas];
     return NextResponse.json(combined);
   }
