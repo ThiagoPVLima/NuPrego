@@ -62,40 +62,57 @@ export default function Historico() {
     const horizonteFixas = `${d24.getFullYear()}-${String(d24.getMonth() + 1).padStart(2, '0')}`;
     const horizonteGeral = horizonteFixas > horizonteParceladas ? horizonteFixas : horizonteParceladas;
 
-    // Última entrada por fixa
-    const ultimaEntrada: Record<string, { valor: number; mes: string }> = {};
-    for (const t of txs.filter(t => t.tipo === 'fixa')) {
-      const desc = norm(t.descricao);
-      const k = txKey(t);
-      if (!ultimaEntrada[desc] || k > ultimaEntrada[desc].mes)
-        ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
-    }
-
     const msBetween = (a: string, b: string) => {
       const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
       return (by - ay) * 12 + (bm - am);
     };
 
-    // Projetar fixas nos meses sem entrada explícita até o horizonte:
-    //  - explicitamente ativa  (fixas_config.ativa===true)  → projeta até 24 meses
-    //  - explicitamente inativa (fixas_config.ativa===false) → nunca projeta
-    //  - sem config                                          → projeta só se última entrada ≤ 3 meses atrás
+    // Rastreia: primeira e última entrada, e quais meses já têm dado explícito por fixa
+    const fixaMeses: Record<string, Set<string>> = {};
+    const primeiraEntrada: Record<string, string> = {};
+    const ultimaEntrada: Record<string, { valor: number; mes: string }> = {};
+    for (const t of txs.filter((t: any) => t.tipo === 'fixa')) {
+      const desc = norm(t.descricao);
+      const k = txKey(t);
+      if (!fixaMeses[desc]) fixaMeses[desc] = new Set();
+      fixaMeses[desc].add(k);
+      if (!primeiraEntrada[desc] || k < primeiraEntrada[desc]) primeiraEntrada[desc] = k;
+      if (!ultimaEntrada[desc] || k > ultimaEntrada[desc].mes)
+        ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
+    }
+
+    // Preenche TODOS os meses de cada fixa ativa — passados e futuros:
+    //  Passado : preenche buracos entre entradas (fixa deve aparecer em todos os meses)
+    //  Futuro  : cfg.ativa===true → 24 meses; sem config recente → 3 meses; inativa → para
     for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
       const cfg = cfgMap[desc];
       if (cfg && cfg.ativa === false) continue;
-      const horizonte = cfg?.ativa === true ? horizonteGeral : (() => {
+
+      const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
+      const projetarFuturo = cfg?.ativa === true || msBetween(ultima, currentYM) <= 3;
+      const horizonteFuturo = cfg?.ativa === true ? horizonteGeral : (() => {
         const d = new Date(now.getFullYear(), now.getMonth() + 3, 1);
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       })();
-      if (!cfg && msBetween(ultima, currentYM) > 3) continue; // inativa por recência, sem config
-      const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
-      let [y, m] = ultima.split('-').map(Number);
-      let cursor = new Date(y, m, 1);
+
+      // Começa do primeiro mês com dado (backfill) ou data_inicio (o que for mais recente)
+      const startMes = primeiraEntrada[desc] ?? ultima;
+      const [sy, sm] = startMes.split('-').map(Number);
+      let cursor = new Date(sy, sm - 1, 1); // sm-1: JS Date usa meses 0-indexed
+
       while (true) {
         const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-        if (ym > horizonte) break;
-        if (!dataInicio || ym >= dataInicio)
+        const isFuturo = ym > currentYM;
+
+        // Para se passou do horizonte futuro ou se não deve projetar futuro
+        if (isFuturo && !projetarFuturo) break;
+        if (ym > horizonteFuturo) break;
+
+        // Preenche só se não tem entrada explícita e respeita data_inicio
+        if (!fixaMeses[desc]?.has(ym) && (!dataInicio || ym >= dataInicio)) {
           addTo(ym, { tipo: 'fixa', valor });
+        }
+
         cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
       }
     }
