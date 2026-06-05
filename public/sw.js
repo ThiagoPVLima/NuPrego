@@ -1,9 +1,6 @@
 const CACHE = 'nuprego-v1';
 
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/'])));
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -14,23 +11,19 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Ignora requisições fora da origem e chamadas de API
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return;
-  if (request.method !== 'GET') return;
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return;
 
   event.respondWith(
-    fetch(request)
-      .then((response) => {
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request).then((response) => {
         if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE).then((c) => c.put(request, clone));
+          caches.open(CACHE).then((c) => c.put(event.request, response.clone()));
         }
         return response;
-      })
-      .catch(() => caches.match(request))
+      });
+      return cached || network;
+    })
   );
 });
