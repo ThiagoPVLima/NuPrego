@@ -81,32 +81,22 @@ export default function Historico() {
         ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
     }
 
-    // Preenche TODOS os meses de cada fixa ativa — passados e futuros:
-    //  Passado : preenche buracos entre entradas (fixa deve aparecer em todos os meses)
-    //  Futuro  : cfg.ativa===true → 24 meses; sem config recente → 3 meses; inativa → para
-    for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
+    // Preenche TODOS os meses de cada fixa — passado (backfill) e futuro (até 24 meses):
+    //  Regra: aparece até o usuário desativar explicitamente (ativa===false → para)
+    for (const [desc, { valor }] of Object.entries(ultimaEntrada)) {
       const cfg = cfgMap[desc];
-      if (cfg && cfg.ativa === false) continue;
+      if (cfg && cfg.ativa === false) continue; // desativada → não projeta
 
       const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
-      const projetarFuturo = cfg?.ativa === true || msBetween(ultima, currentYM) <= 3;
-      const horizonteFuturo = cfg?.ativa === true ? horizonteGeral : (() => {
-        const d = new Date(now.getFullYear(), now.getMonth() + 3, 1);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      })();
+      const startMes = primeiraEntrada[desc];
+      if (!startMes) continue;
 
-      // Começa do primeiro mês com dado (backfill) ou data_inicio (o que for mais recente)
-      const startMes = primeiraEntrada[desc] ?? ultima;
       const [sy, sm] = startMes.split('-').map(Number);
       let cursor = new Date(sy, sm - 1, 1); // sm-1: JS Date usa meses 0-indexed
 
       while (true) {
         const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-        const isFuturo = ym > currentYM;
-
-        // Para se passou do horizonte futuro ou se não deve projetar futuro
-        if (isFuturo && !projetarFuturo) break;
-        if (ym > horizonteFuturo) break;
+        if (ym > horizonteGeral) break; // sempre usa horizonte de 24 meses
 
         // Preenche só se não tem entrada explícita e respeita data_inicio
         if (!fixaMeses[desc]?.has(ym) && (!dataInicio || ym >= dataInicio)) {
