@@ -191,9 +191,9 @@ export default function Transacoes() {
                 · PIX {fmt(totalPixParcelado)}
               </span>
             )}
-            {(total + totalPixParcelado) > 0 && txsPixParcelado.length > 0 && (
+            {(txsProjetadas.length > 0 || txsPixParcelado.length > 0) && (
               <span style={{ marginLeft: '8px', color: '#ffb783', fontWeight: 600 }}>
-                · total {fmt(total + totalPixParcelado)}
+                · total {fmt(total + totalProjetado + totalPixParcelado)}
               </span>
             )}
           </div>
@@ -225,7 +225,7 @@ export default function Transacoes() {
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)' }}>
           {[
-            { key: 'fatura' as const, label: 'Fatura', total: fmt(total) },
+            { key: 'fatura' as const, label: 'Fatura', total: fmt(total + totalProjetado) },
             { key: 'pix' as const, label: 'PIX / Dinheiro', total: fmt(totalPixParcelado) },
           ].map(t => (
             <button

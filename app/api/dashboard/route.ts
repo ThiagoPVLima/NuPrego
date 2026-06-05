@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   const thisMonthDescs = new Set(baseTxs.filter((t: any) => t.tipo === 'fixa').map((t: any) => norm(t.descricao)));
   const projMap = new Map<string, any>();
   for (const f of (prevFixasRes.data || [])) {
-    const key = (f.descricao || '').toLowerCase();
+    const key = norm(f.descricao);
     if (!thisMonthDescs.has(key) && !projMap.has(key) && shouldProject(f.descricao || '', f.data)) {
       projMap.set(key, { ...f, id: null, projetado: true, data: firstDayOfM, fatura_ano: ano, fatura_mes: mes });
     }
