@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import ServiceWorker from '@/components/ServiceWorker';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('nuprego-theme');document.documentElement.classList.add(t==='light'?'light':'dark');})();` }} />
       </head>
       <body>
+        <ServiceWorker />
         <ThemeProvider>
           <div style={{ display: 'flex', minHeight: '100vh' }}>
             {user && (
