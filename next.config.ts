@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const withPWA = require("next-pwa");
+import withPWAInit from "@ducanh2912/next-pwa";
 
-const nextConfig: NextConfig = {};
-
-export default withPWA({
+const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
-})(nextConfig);
+});
+
+const nextConfig: NextConfig = {};
+
+export default withPWA(nextConfig);
