@@ -17,21 +17,74 @@ export default function Historico() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await fetch('/api/transacoes');
-    const txs = await r.json();
-    const por: Record<string, any> = {};
-    for (const t of (Array.isArray(txs) ? txs : [])) {
-      // Usa fatura_ano/fatura_mes quando disponível (parceladas de cartão entram no mês certo)
-      const k = t.fatura_ano && t.fatura_mes
+    const [txsRes, cfgRes] = await Promise.all([
+      fetch('/api/transacoes').then(r => r.json()),
+      fetch('/api/fixas-config').then(r => r.json()).catch(() => []),
+    ]);
+
+    const txs: any[] = Array.isArray(txsRes) ? txsRes : [];
+
+    // fixas_config: saber quais estão ativas
+    const cfgMap: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
+    for (const c of (Array.isArray(cfgRes) ? cfgRes : [])) {
+      cfgMap[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+    }
+
+    const txKey = (t: any): string =>
+      t.fatura_ano && t.fatura_mes
         ? `${t.fatura_ano}-${String(t.fatura_mes).padStart(2, '0')}`
-        : t.data?.substring(0, 7);
-      if (!k) continue;
+        : (t.data?.substring(0, 7) ?? '');
+
+    const por: Record<string, any> = {};
+    const addTo = (k: string, t: any) => {
+      if (!k) return;
       if (!por[k]) por[k] = { total: 0, qtd: 0, fixas: 0, parceladas: 0, avulsas: 0 };
       por[k].total += Number(t.valor); por[k].qtd++;
       if (t.tipo === 'fixa') por[k].fixas += Number(t.valor);
       else if (t.tipo === 'parcelada') por[k].parceladas += Number(t.valor);
       else por[k].avulsas += Number(t.valor);
+    };
+
+    for (const t of txs) addTo(txKey(t), t);
+
+    // Horizonte = mês mais distante com parcelada no banco
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const horizonte = txs
+      .filter(t => t.tipo === 'parcelada')
+      .reduce((max, t) => { const k = txKey(t); return k > max ? k : max; }, currentYM);
+
+    // Projetar fixas ativas nos meses sem entrada explícita, até o horizonte
+    const msBetween = (a: string, b: string) => {
+      const [ay, am] = a.split('-').map(Number);
+      const [by, bm] = b.split('-').map(Number);
+      return (by - ay) * 12 + (bm - am);
+    };
+    // última entrada por fixa
+    const ultimaEntrada: Record<string, { valor: number; mes: string }> = {};
+    for (const t of txs.filter(t => t.tipo === 'fixa')) {
+      const desc = (t.descricao || '').toLowerCase();
+      const k = txKey(t);
+      if (!ultimaEntrada[desc] || k > ultimaEntrada[desc].mes)
+        ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
     }
+    for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
+      const cfg = cfgMap[desc];
+      if (cfg && !cfg.ativa) continue;
+      const ativa = cfg?.ativa === true || msBetween(ultima, currentYM) <= 3;
+      if (!ativa) continue;
+      const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
+      let [y, m] = ultima.split('-').map(Number);
+      let cursor = new Date(y, m, 1); // mês seguinte à última entrada
+      while (true) {
+        const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        if (ym > horizonte) break;
+        if (!dataInicio || ym >= dataInicio)
+          addTo(ym, { tipo: 'fixa', valor });
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      }
+    }
+
     const lista = Object.entries(por).map(([periodo, v]) => ({ periodo, ...v })).sort((a, b) => b.periodo.localeCompare(a.periodo));
     setDados(lista);
     const anosArr = Array.from(new Set(lista.map(l => parseInt(l.periodo.split('-')[0])))).sort((a, b) => b - a) as number[];
@@ -66,7 +119,7 @@ export default function Historico() {
         <>
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>GASTOS MENSAIS</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '168px', overflowX: 'auto', paddingBottom: '8px', overflow: 'visible' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '176px', overflowX: 'auto', paddingTop: '22px', paddingBottom: '8px' }}>
               {[...filtrados].reverse().map((d) => {
                 const h = Math.max(6, (d.total / maxTotal) * 100);
                 const [y, m] = d.periodo.split('-');
