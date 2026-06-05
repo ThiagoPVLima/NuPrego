@@ -8,7 +8,7 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 
 const limiteAtiva = (() => {
   const d = new Date();
-  d.setMonth(d.getMonth() - 2);
+  d.setMonth(d.getMonth() - 3); // alinhado com o threshold de 3 meses da API de projeção
   d.setDate(1);
   return d.toISOString().split('T')[0];
 })();
