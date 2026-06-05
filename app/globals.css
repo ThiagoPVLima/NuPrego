@@ -398,7 +398,7 @@ input::placeholder { color: var(--outline); }
     box-shadow: 4px 0 32px rgba(0,0,0,0.4);
   }
 
-  .sidebar-close-icon { display: block; }
+  .sidebar-close-icon { display: inline-flex; }
 
   .sidebar-backdrop {
     display: block;
