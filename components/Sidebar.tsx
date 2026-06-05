@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,7 +21,14 @@ export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const { theme, toggle } = useTheme();
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -32,7 +39,7 @@ export default function Sidebar({ userName }: { userName: string }) {
 
   const navContent = (
     <>
-      <div style={{ padding: '0 8px', marginBottom: '32px' }}>
+      <div style={{ padding: '0 8px', marginBottom: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Image
             src="/NuPrego-Logo.png"
@@ -46,6 +53,14 @@ export default function Sidebar({ userName }: { userName: string }) {
             <div style={{ fontSize: '11px', color: 'var(--outline-variant)', marginTop: '1px' }}>Controle de Gastos</div>
           </div>
         </div>
+        <button
+          type="button"
+          className="btn-ghost sidebar-close-icon"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Fechar menu"
+        >
+          ✕
+        </button>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
@@ -108,6 +123,37 @@ export default function Sidebar({ userName }: { userName: string }) {
           <span style={{ fontSize: '13px' }}>{theme === 'dark' ? '☀' : '☽'}</span>
           {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
         </button>
+        {installPrompt && (
+          <button
+            type="button"
+            onClick={() => { installPrompt.prompt(); setInstallPrompt(null); }}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--sidebar-border)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              color: 'var(--outline)',
+              fontSize: '12px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'color 0.15s, border-color 0.15s, background 0.15s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-high)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--on-surface-muted)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--outline)';
+            }}
+          >
+            <span style={{ fontSize: '13px' }}>⬇</span>
+            Instalar app
+          </button>
+        )}
         <button
           type="button"
           onClick={handleLogout}
@@ -180,16 +226,6 @@ export default function Sidebar({ userName }: { userName: string }) {
 
       {/* Sidebar */}
       <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
-        <div className="sidebar-mobile-close">
-          <button
-            type="button"
-            className="btn-ghost sidebar-close-icon"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Fechar menu"
-          >
-            ✕
-          </button>
-        </div>
         {navContent}
       </aside>
     </>

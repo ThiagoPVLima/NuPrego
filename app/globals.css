@@ -315,7 +315,7 @@ input::placeholder { color: var(--outline); }
   object-fit: cover;
 }
 
-.sidebar-close-icon { font-size: 18px; }
+.sidebar-close-icon { font-size: 18px; display: none; }
 
 .hamburger-btn {
   background: transparent;
@@ -398,12 +398,7 @@ input::placeholder { color: var(--outline); }
     box-shadow: 4px 0 32px rgba(0,0,0,0.4);
   }
 
-  .sidebar-mobile-close {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
-    margin-top: -4px;
-  }
+  .sidebar-close-icon { display: block; }
 
   .sidebar-backdrop {
     display: block;
