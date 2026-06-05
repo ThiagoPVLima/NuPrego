@@ -71,17 +71,29 @@ export default function Historico() {
         ultimaEntrada[desc] = { valor: Number(t.valor), mes: k };
     }
 
-    // Projetar fixas ativas em todos os meses sem entrada explícita até o horizonte
+    const msBetween = (a: string, b: string) => {
+      const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
+      return (by - ay) * 12 + (bm - am);
+    };
+
+    // Projetar fixas nos meses sem entrada explícita até o horizonte:
+    //  - explicitamente ativa  (fixas_config.ativa===true)  → projeta até 24 meses
+    //  - explicitamente inativa (fixas_config.ativa===false) → nunca projeta
+    //  - sem config                                          → projeta só se última entrada ≤ 3 meses atrás
     for (const [desc, { valor, mes: ultima }] of Object.entries(ultimaEntrada)) {
       const cfg = cfgMap[desc];
-      // Desativada explicitamente → não projeta (checa ativa===false, não apenas falsy)
       if (cfg && cfg.ativa === false) continue;
+      const horizonte = cfg?.ativa === true ? horizonteGeral : (() => {
+        const d = new Date(now.getFullYear(), now.getMonth() + 3, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      })();
+      if (!cfg && msBetween(ultima, currentYM) > 3) continue; // inativa por recência, sem config
       const dataInicio = cfg?.data_inicio?.substring(0, 7) ?? null;
       let [y, m] = ultima.split('-').map(Number);
-      let cursor = new Date(y, m, 1); // mês seguinte à última entrada
+      let cursor = new Date(y, m, 1);
       while (true) {
         const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-        if (ym > horizonteGeral) break;
+        if (ym > horizonte) break;
         if (!dataInicio || ym >= dataInicio)
           addTo(ym, { tipo: 'fixa', valor });
         cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
