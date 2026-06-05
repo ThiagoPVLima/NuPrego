@@ -21,7 +21,11 @@ export default function Historico() {
     const txs = await r.json();
     const por: Record<string, any> = {};
     for (const t of (Array.isArray(txs) ? txs : [])) {
-      const k = t.data?.substring(0, 7); if (!k) continue;
+      // Usa fatura_ano/fatura_mes quando disponível (parceladas de cartão entram no mês certo)
+      const k = t.fatura_ano && t.fatura_mes
+        ? `${t.fatura_ano}-${String(t.fatura_mes).padStart(2, '0')}`
+        : t.data?.substring(0, 7);
+      if (!k) continue;
       if (!por[k]) por[k] = { total: 0, qtd: 0, fixas: 0, parceladas: 0, avulsas: 0 };
       por[k].total += Number(t.valor); por[k].qtd++;
       if (t.tipo === 'fixa') por[k].fixas += Number(t.valor);
