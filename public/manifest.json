@@ -1,0 +1,25 @@
+{
+  "name": "NuPrego — Controle de Gastos",
+  "short_name": "NuPrego",
+  "description": "Sistema pessoal de controle financeiro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1417",
+  "theme_color": "#0f1417",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/NuPrego-Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/NuPrego-Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

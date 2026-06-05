@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   title: 'NuPrego — Controle de Gastos',
   description: 'Sistema pessoal de controle financeiro',
   metadataBase: new URL('https://nu-prego.vercel.app'),
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'NuPrego',
+  },
   icons: {
     icon: '/NuPrego-Logo-Ico.ico',
     apple: '/NuPrego-Logo.png',
@@ -56,6 +62,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="theme-color" content="#0f1417" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* Apply theme class before first paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('nuprego-theme');document.documentElement.classList.add(t==='light'?'light':'dark');})();` }} />
       </head>
