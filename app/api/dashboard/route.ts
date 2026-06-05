@@ -8,8 +8,10 @@ export async function GET(req: NextRequest) {
 
   const nextMes = mes === 12 ? 1 : mes + 1;
   const nextAno = mes === 12 ? ano + 1 : ano;
+  const mesPrefix = `${ano}-${String(mes).padStart(2, '0')}`;
+  const firstDayOfM = `${mesPrefix}-01`;
 
-  const [transacoes, cartoes, meses, pixParceladosNext] = await Promise.all([
+  const [transacoes, cartoes, meses, pixParceladosNext, prevFixasRes, fixasConfigRes] = await Promise.all([
     supabase.from('transacoes')
       .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
       .eq('fatura_ano', ano).eq('fatura_mes', mes),
@@ -21,10 +23,45 @@ export async function GET(req: NextRequest) {
       .is('cartao_id', null)
       .eq('fatura_ano', nextAno)
       .eq('fatura_mes', nextMes),
+    supabase.from('transacoes')
+      .select('descricao, valor, tipo, meio_pagamento, cartao_id, categoria_id, categoria_ids, data')
+      .eq('tipo', 'fixa')
+      .lt('data', firstDayOfM)
+      .order('data', { ascending: false })
+      .limit(500),
+    supabase.from('fixas_config').select('descricao, ativa, data_inicio'),
   ]);
 
+  // Projeção de fixas sem entrada explícita neste mês (mesma lógica de /api/transacoes)
+  const fixasConfig: Record<string, { ativa: boolean; data_inicio: string | null }> = {};
+  for (const c of (fixasConfigRes?.data || [])) {
+    fixasConfig[(c.descricao || '').toLowerCase()] = { ativa: c.ativa, data_inicio: c.data_inicio };
+  }
+  const monthsBetween = (a: string, b: string) => {
+    const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
+    return (by - ay) * 12 + (bm - am);
+  };
+  const shouldProject = (descricao: string, lastData: string) => {
+    const cfg = fixasConfig[descricao.toLowerCase()];
+    if (cfg) {
+      if (!cfg.ativa) return false;
+      if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
+      return true;
+    }
+    return monthsBetween(lastData.substring(0, 7) + '-01', firstDayOfM) <= 3;
+  };
+  const baseTxs = transacoes.data || [];
+  const thisMonthDescs = new Set(baseTxs.filter((t: any) => t.tipo === 'fixa').map((t: any) => (t.descricao || '').toLowerCase()));
+  const projMap = new Map<string, any>();
+  for (const f of (prevFixasRes.data || [])) {
+    const key = (f.descricao || '').toLowerCase();
+    if (!thisMonthDescs.has(key) && !projMap.has(key) && shouldProject(f.descricao || '', f.data)) {
+      projMap.set(key, { ...f, id: null, projetado: true, data: firstDayOfM, fatura_ano: ano, fatura_mes: mes });
+    }
+  }
+
   // Exclui parcelados PIX/dinheiro do mês atual — eles pertencem à fatura do mês anterior
-  const allTxs = transacoes.data || [];
+  const allTxs = [...baseTxs, ...Array.from(projMap.values())];
   const txs = allTxs.filter((t: any) => !(t.tipo === 'parcelada' && !t.cartao_id));
   const pixNext = pixParceladosNext.data || [];
 

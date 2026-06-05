@@ -86,7 +86,8 @@ export default function Parcelados() {
       };
     }
     acc[key].parcelas.push({ id: t.id, data: t.data, parcela_atual: t.parcela_atual, pago: !!t.pago });
-    if (t.data <= hoje || t.pago) acc[key].pagas++;
+    const ehPix = !t.cartao_id && (t.meio_pagamento === 'pix' || t.meio_pagamento === 'dinheiro');
+    if (ehPix ? t.pago : (t.data <= hoje || t.pago)) acc[key].pagas++;
     if (t.data < acc[key].dataInicio) acc[key].dataInicio = t.data;
     return acc;
   }, {} as Record<string, Grupo>);
@@ -426,7 +427,10 @@ export default function Parcelados() {
                   allParcelas.push({ id: null, data: dataStr, parcela_atual: i, pago: false });
                 }
               }
-              const futuras = allParcelas.filter(p => !p.pago).sort((a, b) => a.data.localeCompare(b.data));
+              const ehPix = !editando.cartaoId && (editando.meioP === 'pix' || editando.meioP === 'dinheiro');
+              const futuras = allParcelas
+                .filter(p => !p.pago && (ehPix || p.data > hoje))
+                .sort((a, b) => a.data.localeCompare(b.data));
               const proxima = futuras[0];
               const ultima = futuras[futuras.length - 1];
               const gKey = editando.grupo || String(editando.id);
