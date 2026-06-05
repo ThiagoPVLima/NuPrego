@@ -379,6 +379,9 @@ input::placeholder { color: var(--outline); }
   font-weight: 600;
 }
 
+/* Meta info escondida no desktop, visível no mobile via .row-meta-mobile */
+.row-meta-mobile { display: none; }
+
 /* ── Mobile breakpoint ── */
 @media (max-width: 767px) {
   .sidebar {
@@ -433,8 +436,24 @@ input::placeholder { color: var(--outline); }
     padding-top: 72px !important;
   }
 
-  /* Prevent horizontal overflow in cards with tables */
-  .card { overflow-x: auto; }
+  /* ── Tabelas responsivas ── */
+  /* Remove scroll horizontal forçado */
+  .table-responsive-wrap { overflow-x: visible !important; }
+  .table-responsive-wrap > * { min-width: 0 !important; }
+
+  /* Esconde cabeçalho (labels ficam no meta inline) */
+  .table-header-hide-mobile { display: none !important; }
+
+  /* Colunas secundárias somem no mobile */
+  .table-col-hide-mobile { display: none !important; }
+
+  /* Linhas viram grid de 3 colunas: descrição | valor | data+btn */
+  .table-row-data { grid-template-columns: 1fr auto auto !important; }
+  /* Histórico: 2 colunas - período | total */
+  .table-row-2col { grid-template-columns: 1fr auto !important; }
+
+  /* Meta info (pagamento · tipo · parcela) aparece no mobile */
+  .row-meta-mobile { display: flex !important; }
 
   /* Page-level responsive */
   .page-header {

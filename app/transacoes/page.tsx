@@ -247,16 +247,16 @@ export default function Transacoes() {
           ))}
         </div>
 
-        {/* Wrapper com scroll horizontal para mobile */}
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        {/* Wrapper — sem scroll horizontal no mobile */}
+        <div className="table-responsive-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           <div style={{ minWidth: aba === 'pix' ? '560px' : '680px' }}>
             {aba === 'fatura' && (
-              <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+              <div className="table-row table-header-hide-mobile" style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
                 <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>TIPO</span><span>PARCELA</span><span>DATA</span>
               </div>
             )}
             {aba === 'pix' && (
-              <div className="table-row" style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+              <div className="table-row table-header-hide-mobile" style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
                 <span>DESCRIÇÃO</span><span>VALOR</span><span>PAGAMENTO</span><span>PARCELA</span><span>DATA</span>
               </div>
             )}
@@ -289,7 +289,7 @@ export default function Transacoes() {
               return (
                 <div
                   key={projetado ? `proj-${t.descricao}-${idx}` : t.id}
-                  className="table-row"
+                  className="table-row table-row-data"
                   style={{ gridTemplateColumns: '1fr 130px 150px 100px 80px 90px', cursor: 'pointer' }}
                   onClick={handleClick}
                 >
@@ -315,9 +315,15 @@ export default function Transacoes() {
                         </div>
                       ) : null;
                     })()}
+                    {/* Meta visível só no mobile */}
+                    <div className="row-meta-mobile" style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px' }}>
+                      {mp && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: mp.cor, display: 'inline-block' }}></span>{mp.label}</span>}
+                      <span style={{ color: tipoCor[t.tipo] }}>{tipoLabel[t.tipo]}</span>
+                      {t.tipo === 'parcelada' && t.parcela_atual && t.total_parcelas && <span>{t.parcela_atual}/{t.total_parcelas}</span>}
+                    </div>
                   </div>
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
-                  <div>
+                  <div className="table-col-hide-mobile">
                     {mp ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
                         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
@@ -325,12 +331,12 @@ export default function Transacoes() {
                       </span>
                     ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
                   </div>
-                  <div>
+                  <div className="table-col-hide-mobile">
                     <span className="badge" style={{ background: `${tipoCor[t.tipo]}20`, color: tipoCor[t.tipo] }}>
                       {tipoLabel[t.tipo]}
                     </span>
                   </div>
-                  <div>
+                  <div className="table-col-hide-mobile">
                     {t.tipo === 'parcelada' && t.parcela_atual && t.total_parcelas ? (
                       <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
                         {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>
@@ -376,7 +382,7 @@ export default function Transacoes() {
               return (
                 <div
                   key={t.id}
-                  className="table-row"
+                  className="table-row table-row-data"
                   style={{ gridTemplateColumns: '1fr 130px 150px 80px 90px', cursor: 'pointer' }}
                   onClick={() => abrirEditar(t)}
                 >
@@ -395,9 +401,13 @@ export default function Transacoes() {
                         </div>
                       ) : null;
                     })()}
+                    <div className="row-meta-mobile" style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px' }}>
+                      {mp && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: mp.cor, display: 'inline-block' }}></span>{mp.label}</span>}
+                      {t.parcela_atual && t.total_parcelas && <span>{t.parcela_atual}/{t.total_parcelas}</span>}
+                    </div>
                   </div>
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '14px', fontWeight: 500, color: 'var(--on-surface)' }}>{fmt(Number(t.valor))}</div>
-                  <div>
+                  <div className="table-col-hide-mobile">
                     {mp ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--on-surface-muted)' }}>
                         <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: mp.cor, display: 'inline-block', flexShrink: 0 }}></span>
@@ -405,7 +415,7 @@ export default function Transacoes() {
                       </span>
                     ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
                   </div>
-                  <div>
+                  <div className="table-col-hide-mobile">
                     {t.parcela_atual && t.total_parcelas ? (
                       <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
                         {t.parcela_atual}<span style={{ color: 'var(--outline-variant)' }}>/{t.total_parcelas}</span>

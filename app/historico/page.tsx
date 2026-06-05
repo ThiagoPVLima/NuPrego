@@ -77,22 +77,37 @@ export default function Historico() {
           </div>
 
           <div className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr 120px 110px 120px 60px', padding: '12px 20px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', gap: '8px' }}>
+            <div className="table-header-hide-mobile" style={{ display: 'grid', gridTemplateColumns: '110px 1fr 120px 110px 120px 60px', padding: '12px 20px', background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', gap: '8px' }}>
               <span>PERÍODO</span><span>BARRA</span><span>TOTAL</span><span>FIXAS</span><span>PARCELADAS</span><span>QTD</span>
             </div>
             {filtrados.map((d) => {
               const [y, m] = d.periodo.split('-');
               const pct = (d.total / maxTotal) * 100;
               return (
-                <div key={d.periodo} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 120px 110px 120px 60px', padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '13px', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, color: 'var(--on-surface-muted)' }}>{MESES_NOME[parseInt(m)-1]} {y}</span>
-                  <div className="progress-track" style={{ height: '5px' }}>
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: 'var(--primary-dark)' }}></div>
+                <div key={d.periodo} className="table-row-2col" style={{ display: 'grid', gridTemplateColumns: '110px 1fr 120px 110px 120px 60px', padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '13px', gap: '8px', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, color: 'var(--on-surface-muted)' }}>{MESES_NOME[parseInt(m)-1]} {y}</span>
+                    {/* Barra e detalhes visíveis só no mobile */}
+                    <div className="row-meta-mobile" style={{ flexDirection: 'column', gap: '4px', marginTop: '6px', width: '100%' }}>
+                      <div className="progress-track" style={{ height: '4px', width: '100%' }}>
+                        <div className="progress-fill" style={{ width: `${pct}%`, background: 'var(--primary-dark)' }}></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        <span style={{ color: 'var(--primary)' }}>F {fmt(d.fixas)}</span>
+                        <span style={{ color: 'var(--tertiary)' }}>P {fmt(d.parceladas)}</span>
+                        <span>{d.qtd} tx</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="table-col-hide-mobile" style={{ display: 'contents' }}>
+                    <div className="progress-track" style={{ height: '5px' }}>
+                      <div className="progress-fill" style={{ width: `${pct}%`, background: 'var(--primary-dark)' }}></div>
+                    </div>
                   </div>
                   <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--on-surface)', fontWeight: 500 }}>{fmt(d.total)}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--primary)' }}>{fmt(d.fixas)}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--tertiary)' }}>{fmt(d.parceladas)}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--outline)' }}>{d.qtd}</span>
+                  <span className="table-col-hide-mobile" style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--primary)' }}>{fmt(d.fixas)}</span>
+                  <span className="table-col-hide-mobile" style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--tertiary)' }}>{fmt(d.parceladas)}</span>
+                  <span className="table-col-hide-mobile" style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--outline)' }}>{d.qtd}</span>
                 </div>
               );
             })}
