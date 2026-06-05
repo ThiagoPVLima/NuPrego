@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         if (cfg.data_inicio && firstDayOfM < cfg.data_inicio) return false;
         return true; // explicitamente ativa: sem limite de tempo
       }
-      return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 3;
+      return monthsBetween(lastRowData.substring(0, 7) + '-01', firstDayOfM) <= 24;
     };
 
     const { data: prevFixas } = await supabase
