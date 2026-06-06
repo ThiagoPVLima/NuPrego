@@ -10,7 +10,7 @@ const tipoCor: Record<string, string> = { fixa: '#8083ff', parcelada: '#ffb783',
 const meioCor: Record<string, string> = { pix: '#00b8d4', dinheiro: '#6edab4' };
 const meioLabel: Record<string, string> = { pix: 'Pix', dinheiro: 'Dinheiro' };
 
-type Aba = 'avulsa' | 'parcelada' | 'fixa';
+type Aba = 'avulsa' | 'parcelada' | 'fixa' | 'pix';
 
 export default function Transacoes() {
   const now = new Date();
@@ -37,22 +37,35 @@ export default function Transacoes() {
   });
 
   const mesStr = `${ano}-${String(mes).padStart(2, '0')}`;
+  const nextMesStr = (() => {
+    const m = mes === 12 ? 1 : mes + 1;
+    const a = mes === 12 ? ano + 1 : ano;
+    return `${a}-${String(m).padStart(2, '0')}`;
+  })();
+
+  const [pixNextTxs, setPixNextTxs] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     const p = new URLSearchParams({ mes: mesStr });
     if (filtroCartao) p.set('cartao_id', filtroCartao);
     if (busca) p.set('busca', busca);
-    const [t, c, cat] = await Promise.all([
+    const pNext = new URLSearchParams({ mes: nextMesStr, tipo: 'parcelada' });
+    const pixNextFetch = filtroCartao
+      ? Promise.resolve([])
+      : fetch(`/api/transacoes?${pNext}`).then(r => r.json()).catch(() => []);
+    const [t, c, cat, pn] = await Promise.all([
       fetch(`/api/transacoes?${p}`).then(r => r.json()),
       fetch('/api/cartoes').then(r => r.json()),
       fetch('/api/categorias').then(r => r.json()),
+      pixNextFetch,
     ]);
     setTxs(Array.isArray(t) ? t : []);
     setCartoes(Array.isArray(c) ? c : []);
     setCategorias(Array.isArray(cat) ? cat : []);
+    setPixNextTxs((Array.isArray(pn) ? pn : []).filter((x: any) => !x.cartao_id && !x.projetado));
     setLoading(false);
-  }, [mesStr, filtroCartao, busca]);
+  }, [mesStr, nextMesStr, filtroCartao, busca]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -145,14 +158,16 @@ export default function Transacoes() {
   const totalAvulsas = txsAvulsas.reduce((s, t) => s + Number(t.valor), 0);
   const totalParceladas = txsParceladas.filter(t => !t.projetado).reduce((s, t) => s + Number(t.valor), 0);
   const totalFixas = txsFixas.reduce((s, t) => s + Number(t.valor), 0);
+  const totalPix = pixNextTxs.reduce((s: number, t: any) => s + Number(t.valor), 0);
   const totalGeral = totalAvulsas + totalParceladas + totalFixas;
 
-  const abaAtual = aba === 'avulsa' ? txsAvulsas : aba === 'parcelada' ? txsParceladas : txsFixas;
+  const abaAtual = aba === 'avulsa' ? txsAvulsas : aba === 'parcelada' ? txsParceladas : aba === 'fixa' ? txsFixas : pixNextTxs;
 
   const ABAS: { key: Aba; label: string; total: number; cor: string }[] = [
     { key: 'avulsa', label: 'Avulsas', total: totalAvulsas, cor: tipoCor.avulsa },
     { key: 'parcelada', label: 'Parceladas', total: totalParceladas, cor: tipoCor.parcelada },
     { key: 'fixa', label: 'Fixas', total: totalFixas, cor: tipoCor.fixa },
+    { key: 'pix', label: 'PIX / Dinheiro', total: totalPix, cor: meioCor.pix },
   ];
 
   const renderRow = (t: any, idx: number) => {
@@ -176,7 +191,7 @@ export default function Transacoes() {
       <div
         key={projetado ? `proj-${t.descricao}-${idx}` : t.id}
         className="table-row table-row-data"
-        style={{ gridTemplateColumns: aba === 'parcelada' ? '1fr 130px 150px 80px 90px' : '1fr 130px 150px 90px', cursor: 'pointer' }}
+        style={{ gridTemplateColumns: aba === 'parcelada' ? '1fr 130px 150px 80px 90px' : aba === 'pix' ? '1fr 130px 150px 80px 90px' : '1fr 130px 150px 90px', cursor: 'pointer' }}
         onClick={handleClick}
       >
         <div>
@@ -203,7 +218,7 @@ export default function Transacoes() {
           })()}
           <div className="row-meta-mobile" style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px' }}>
             {mp && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: mp.cor, display: 'inline-block' }}></span>{mp.label}</span>}
-            {aba === 'parcelada' && t.parcela_atual && t.total_parcelas && <span>{t.parcela_atual}/{t.total_parcelas}</span>}
+            {(aba === 'parcelada' || aba === 'pix') && t.parcela_atual && t.total_parcelas && <span>{t.parcela_atual}/{t.total_parcelas}</span>}
           </div>
         </div>
 
@@ -218,7 +233,7 @@ export default function Transacoes() {
           ) : <span style={{ color: 'var(--outline-variant)' }}>—</span>}
         </div>
 
-        {aba === 'parcelada' && (
+        {(aba === 'parcelada' || aba === 'pix') && (
           <div className="table-col-hide-mobile">
             {t.parcela_atual && t.total_parcelas ? (
               <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
@@ -308,17 +323,17 @@ export default function Transacoes() {
         </div>
 
         <div className="table-responsive-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <div style={{ minWidth: aba === 'parcelada' ? '580px' : '520px' }}>
+          <div style={{ minWidth: (aba === 'parcelada' || aba === 'pix') ? '580px' : '520px' }}>
             {/* Header da tabela */}
             <div className="table-row table-header-hide-mobile" style={{
-              gridTemplateColumns: aba === 'parcelada' ? '1fr 130px 150px 80px 90px' : '1fr 130px 150px 90px',
+              gridTemplateColumns: (aba === 'parcelada' || aba === 'pix') ? '1fr 130px 150px 80px 90px' : '1fr 130px 150px 90px',
               background: 'var(--surface-low)', fontSize: '11px', color: 'var(--outline)',
               fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em',
             }}>
               <span>DESCRIÇÃO</span>
               <span>VALOR</span>
               <span>PAGAMENTO</span>
-              {aba === 'parcelada' && <span>PARCELA</span>}
+              {(aba === 'parcelada' || aba === 'pix') && <span>PARCELA</span>}
               <span>DATA</span>
             </div>
 
@@ -326,7 +341,7 @@ export default function Transacoes() {
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
             ) : abaAtual.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>
-                Nenhuma transação {aba === 'avulsa' ? 'avulsa' : aba === 'parcelada' ? 'parcelada' : 'fixa'} neste mês
+                {aba === 'pix' ? 'Nenhum parcelado PIX / Dinheiro neste mês' : `Nenhuma transação ${aba === 'avulsa' ? 'avulsa' : aba === 'parcelada' ? 'parcelada' : 'fixa'} neste mês`}
               </div>
             ) : abaAtual.map(renderRow)}
           </div>
