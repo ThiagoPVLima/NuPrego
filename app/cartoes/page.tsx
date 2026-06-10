@@ -44,28 +44,59 @@ export default function Cartoes() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
         {cartoes.map((c: any) => (
-          <div key={c.id} className="card" style={{ padding: '24px', borderTop: `3px solid ${c.cor}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div key={c.id} style={{
+            background: `linear-gradient(135deg, ${c.cor}f0 0%, ${c.cor}b0 60%, ${c.cor}88 100%)`,
+            borderRadius: '20px',
+            padding: '24px',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: `0 12px 40px ${c.cor}55, 0 4px 12px rgba(0,0,0,0.25)`,
+            minHeight: '160px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}>
+            {/* decorative circles */}
+            <div style={{ position: 'absolute', right: '-24px', top: '-24px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.10)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: '28px', top: '-44px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)' }}>{c.nome}</div>
-                <div style={{ fontSize: '12px', color: 'var(--outline)', marginTop: '4px', fontFamily: 'JetBrains Mono, monospace', display: 'flex', gap: '12px' }}>
-                  <span>fecha dia {c.fechamento}</span>
-                  <span>vence dia {c.vencimento}</span>
+                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '17px', color: '#fff', letterSpacing: '-0.02em' }}>{c.nome}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.72)', marginTop: '5px', fontFamily: 'JetBrains Mono, monospace', display: 'flex', gap: '8px' }}>
+                  <span>fecha {c.fechamento}</span>
+                  <span>·</span>
+                  <span>vence {c.vencimento}</span>
                 </div>
               </div>
-              <div style={{ width: '40px', height: '26px', background: c.cor, borderRadius: '5px', opacity: 0.85 }}></div>
+              <div style={{ width: '36px', height: '28px', background: 'rgba(255,255,255,0.22)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.32)' }} />
             </div>
+
             {Number(c.limite) > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--outline)', marginBottom: '6px' }}>
-                  <span>Limite</span><span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmt(Number(c.limite))}</span>
+              <div style={{ margin: '16px 0 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.72)', marginBottom: '6px' }}>
+                  <span>Limite</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmt(Number(c.limite))}</span>
                 </div>
-                <div className="progress-track"><div className="progress-fill" style={{ width: '0%', background: c.cor }}></div></div>
+                <div style={{ height: '4px', background: 'rgba(255,255,255,0.22)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: '99px', width: '0%', background: 'rgba(255,255,255,0.80)' }}></div>
+                </div>
               </div>
             )}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-primary" onClick={() => abrirEditar(c)} style={{ flex: 1, justifyContent: 'center', fontSize: '13px', background: `linear-gradient(135deg, ${c.cor}cc, ${c.cor})`, boxShadow: `0 8px 24px ${c.cor}55` }}>✎ Editar</button>
-              <button className="btn-danger" onClick={() => excluir(c.id)}>✕</button>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+              <button
+                onClick={() => abrirEditar(c)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)', color: '#fff', borderRadius: '10px', padding: '9px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.28)'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.18)'}
+              >✎ Editar</button>
+              <button
+                onClick={() => excluir(c.id)}
+                style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.35)', color: 'rgba(255,200,200,0.95)', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.35)'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.22)'}
+              >✕</button>
             </div>
           </div>
         ))}
@@ -81,7 +112,7 @@ export default function Cartoes() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>{editando ? 'Editar cartão' : 'Novo cartão'}</h2>
               <button className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
             </div>

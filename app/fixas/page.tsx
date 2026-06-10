@@ -317,13 +317,14 @@ export default function Fixas() {
             return (
               <div key={sec.key}>
                 <div
-                  className="card"
                   style={{
                     padding: '20px 24px',
                     cursor: 'pointer',
                     borderRadius: isAberta ? '20px 20px 0 0' : '20px',
-                    borderBottom: isAberta ? '1px solid transparent' : undefined,
-                    borderTop: `3px solid ${sec.cor}`,
+                    background: `linear-gradient(135deg, ${sec.cor}28 0%, ${sec.cor}10 100%)`,
+                    border: `1.5px solid ${sec.cor}40`,
+                    boxShadow: `0 8px 32px ${sec.cor}20, 0 2px 8px rgba(0,0,0,0.08)`,
+                    transition: 'box-shadow 0.2s, border-radius 0.3s',
                   }}
                   onClick={() => toggleSecao(sec.key)}
                 >
@@ -358,60 +359,66 @@ export default function Fixas() {
                   </div>
                 </div>
 
-                {isAberta && (
-                  <div style={{
-                    background: 'var(--surface-low)',
-                    border: '1px solid var(--clay-border)',
-                    borderTop: 'none',
-                    borderRadius: '0 0 20px 20px',
-                    padding: '12px 14px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                  }}>
-                    {sec.itens.map(g => (
-                      <div
-                        key={g.key}
-                        className="card"
-                        style={{ padding: '14px 18px', cursor: 'pointer', opacity: g.ativa ? 1 : 0.6 }}
-                        onClick={e => { e.stopPropagation(); abrirEditar(g); }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                              <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {g.descricao}
-                              </span>
-                              {!g.ativa && (
-                                <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(255,255,255,0.06)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0 }}>
-                                  INATIVA
+                <div style={{
+                  display: 'grid',
+                  gridTemplateRows: isAberta ? '1fr' : '0fr',
+                  transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{
+                      background: `${sec.cor}08`,
+                      border: `1.5px solid ${sec.cor}28`,
+                      borderTop: 'none',
+                      borderRadius: '0 0 20px 20px',
+                      padding: '12px 14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}>
+                      {sec.itens.map(g => (
+                        <div
+                          key={g.key}
+                          className="card"
+                          style={{ padding: '14px 18px', cursor: 'pointer', opacity: g.ativa ? 1 : 0.6 }}
+                          onClick={e => { e.stopPropagation(); abrirEditar(g); }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                                <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {g.descricao}
                                 </span>
-                              )}
+                                {!g.ativa && (
+                                  <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--clay-input-bg)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0, border: '1px solid var(--clay-input-border)' }}>
+                                    INATIVA
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                                desde {new Date(g.primeiraData + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                                <span style={{ marginLeft: '6px' }}>· {g.mesesAtivos}x registrada</span>
+                                {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
+                                  <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                                    · {categorias.find(c => c.id === g.categoriaId)?.nome}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                              desde {new Date(g.primeiraData + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
-                              <span style={{ marginLeft: '6px' }}>· {g.mesesAtivos}x registrada</span>
-                              {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
-                                <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
-                                  · {categorias.find(c => c.id === g.categoriaId)?.nome}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
-                            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: g.ativa ? 'var(--tertiary)' : 'var(--outline)' }}>
-                              {fmt(g.valorAtual)}
-                              <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                              {fmt(g.totalPago)} total
+                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
+                              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: g.ativa ? 'var(--tertiary)' : 'var(--outline)' }}>
+                                {fmt(g.valorAtual)}
+                                <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                                {fmt(g.totalPago)} total
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -438,7 +445,7 @@ export default function Fixas() {
       {showModal && editando && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
                 {editando.descricao}
               </h2>
@@ -459,10 +466,10 @@ export default function Fixas() {
             </div>
 
             {/* Status ativa/inativa */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--clay-input-bg)', borderRadius: '14px', marginBottom: '20px', border: `1.5px solid ${editando.ativa ? 'rgba(77,221,176,0.3)' : 'var(--clay-input-border)'}`, boxShadow: 'var(--clay-input-shadow)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--clay-input-bg)', borderRadius: '14px', marginBottom: '20px', border: `1.5px solid ${editando.ativa ? 'var(--color-success-border)' : 'var(--clay-input-border)'}`, boxShadow: 'var(--clay-input-shadow)' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '3px' }}>STATUS</div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: editando.ativa ? '#6edab4' : 'var(--outline)', fontFamily: 'Manrope, sans-serif' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: editando.ativa ? 'var(--color-success)' : 'var(--outline)', fontFamily: 'Manrope, sans-serif' }}>
                   {editando.ativa ? '⊙ Ativa' : '◌ Inativa'}
                 </div>
               </div>
@@ -472,8 +479,8 @@ export default function Fixas() {
                 disabled={toggling}
                 style={{
                   padding: '8px 16px', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: 'none', cursor: toggling ? 'wait' : 'pointer',
-                  background: editando.ativa ? 'rgba(239,68,68,0.12)' : 'rgba(110,218,180,0.12)',
-                  color: editando.ativa ? '#f87171' : '#6edab4',
+                  background: editando.ativa ? 'rgba(239,68,68,0.12)' : 'var(--color-success-bg)',
+                  color: editando.ativa ? '#f87171' : 'var(--color-success)',
                   opacity: toggling ? 0.6 : 1,
                   transition: 'all 0.15s',
                   whiteSpace: 'nowrap',

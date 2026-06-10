@@ -38,12 +38,13 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: 500;
   background: var(--clay-bg);
   border: 1px solid var(--clay-border);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--clay-shadow);
+  animation: dropDownIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sheetLabel {

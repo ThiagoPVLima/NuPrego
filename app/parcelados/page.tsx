@@ -260,13 +260,14 @@ export default function Parcelados() {
               <div key={sec.key}>
                 {/* ── Cabeçalho sanfona ── */}
                 <div
-                  className="card"
                   style={{
                     padding: '20px 24px',
                     cursor: 'pointer',
                     borderRadius: isAberta ? '20px 20px 0 0' : '20px',
-                    borderBottom: isAberta ? '1px solid transparent' : undefined,
-                    borderTop: `3px solid ${sec.cor}`,
+                    background: `linear-gradient(135deg, ${sec.cor}28 0%, ${sec.cor}10 100%)`,
+                    border: `1.5px solid ${sec.cor}40`,
+                    boxShadow: `0 8px 32px ${sec.cor}20, 0 2px 8px rgba(0,0,0,0.08)`,
+                    transition: 'box-shadow 0.2s, border-radius 0.3s',
                   }}
                   onClick={() => toggleSecao(sec.key)}
                 >
@@ -304,80 +305,86 @@ export default function Parcelados() {
                 </div>
 
                 {/* ── Itens (expandidos) ── */}
-                {isAberta && (
-                  <div style={{
-                    background: 'var(--surface-low)',
-                    border: '1px solid var(--clay-border)',
-                    borderTop: 'none',
-                    borderRadius: '0 0 20px 20px',
-                    padding: '12px 14px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                  }}>
-                    {sec.itens.map(g => {
-                      const pct = g.totalParcelas > 0 ? (g.pagas / g.totalParcelas) * 100 : 0;
-                      const restantes = Math.max(0, g.totalParcelas - g.pagas);
-                      const finalizado = g.pagas >= g.totalParcelas;
-                      const fillColor = finalizado ? '#6edab4' : pct >= 75 ? '#6edab4' : pct >= 40 ? '#ffb783' : '#8083ff';
+                <div style={{
+                  display: 'grid',
+                  gridTemplateRows: isAberta ? '1fr' : '0fr',
+                  transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{
+                      background: `${sec.cor}08`,
+                      border: `1.5px solid ${sec.cor}28`,
+                      borderTop: 'none',
+                      borderRadius: '0 0 20px 20px',
+                      padding: '12px 14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}>
+                      {sec.itens.map(g => {
+                        const pct = g.totalParcelas > 0 ? (g.pagas / g.totalParcelas) * 100 : 0;
+                        const restantes = Math.max(0, g.totalParcelas - g.pagas);
+                        const finalizado = g.pagas >= g.totalParcelas;
+                        const fillColor = finalizado ? 'var(--color-success)' : pct >= 75 ? 'var(--color-success)' : pct >= 40 ? '#ffb783' : '#8083ff';
 
-                      return (
-                        <div
-                          key={g.grupo || g.id}
-                          className="card"
-                          style={{ padding: '14px 18px', cursor: 'pointer', opacity: finalizado ? 0.6 : 1 }}
-                          onClick={e => { e.stopPropagation(); abrirEditar(g); }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                                <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {g.descricao}
-                                </span>
-                                {finalizado && (
-                                  <span style={{ fontSize: '10px', color: '#6edab4', fontFamily: 'JetBrains Mono, monospace', background: 'rgba(110,218,180,0.12)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0 }}>
-                                    QUITADO
+                        return (
+                          <div
+                            key={g.grupo || g.id}
+                            className="card"
+                            style={{ padding: '14px 18px', cursor: 'pointer', opacity: finalizado ? 0.6 : 1 }}
+                            onClick={e => { e.stopPropagation(); abrirEditar(g); }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                                  <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {g.descricao}
                                   </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                                desde {new Date(g.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
-                                {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
-                                  <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
-                                    · {categorias.find(c => c.id === g.categoriaId)?.nome}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
-                              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: finalizado ? 'var(--outline)' : 'var(--tertiary)' }}>
-                                {fmt(g.valorParcela)}
-                                <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
-                              </div>
-                              {!finalizado && (
-                                <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                                  {fmt(g.valorParcela * restantes)} rest.
+                                  {finalizado && (
+                                    <span style={{ fontSize: '10px', color: 'var(--color-success)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--color-success-bg)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0 }}>
+                                      QUITADO
+                                    </span>
+                                  )}
                                 </div>
-                              )}
+                                <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                                  desde {new Date(g.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                                  {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
+                                    <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
+                                      · {categorias.find(c => c.id === g.categoriaId)?.nome}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
+                                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: finalizado ? 'var(--outline)' : 'var(--tertiary)' }}>
+                                  {fmt(g.valorParcela)}
+                                  <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
+                                </div>
+                                {!finalizado && (
+                                  <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                                    {fmt(g.valorParcela * restantes)} rest.
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--outline)', marginBottom: '4px', fontFamily: 'JetBrains Mono, monospace' }}>
-                              <span>{g.pagas}/{g.totalParcelas} pagas</span>
-                              <span style={{ color: fillColor }}>
-                                {Math.round(pct)}%{!finalizado && ` · ${restantes} restante${restantes !== 1 ? 's' : ''}`}
-                              </span>
-                            </div>
-                            <div className="progress-track" style={{ height: '5px' }}>
-                              <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--outline)', marginBottom: '4px', fontFamily: 'JetBrains Mono, monospace' }}>
+                                <span>{g.pagas}/{g.totalParcelas} pagas</span>
+                                <span style={{ color: fillColor }}>
+                                  {Math.round(pct)}%{!finalizado && ` · ${restantes} restante${restantes !== 1 ? 's' : ''}`}
+                                </span>
+                              </div>
+                              <div className="progress-track" style={{ height: '5px' }}>
+                                <div className="progress-fill" style={{ width: `${pct}%`, background: fillColor }}></div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -388,7 +395,7 @@ export default function Parcelados() {
       {showModal && editando && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
                 {editando.descricao}
               </h2>
@@ -542,7 +549,7 @@ export default function Parcelados() {
                     )}
                     <button type="button" className="btn-secondary" disabled={isLoading}
                       onClick={marcarPago}
-                      style={{ fontSize: '12px', color: '#6edab4', borderColor: 'rgba(110,218,180,0.3)', opacity: isLoading ? 0.6 : 1 }}>
+                      style={{ fontSize: '12px', color: 'var(--color-success)', borderColor: 'var(--color-success-border)', opacity: isLoading ? 0.6 : 1 }}>
                       {marcandoPago === gKey ? '...' : '✓ Tudo pago'}
                     </button>
                   </div>
