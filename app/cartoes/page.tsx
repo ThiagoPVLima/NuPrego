@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 import ModalBase from '@/components/organisms/ModalBase';
+import Button from '@/components/atoms/Button';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const CORES = ['#494bd6','#e91e8c','#ff6b35','#00b4d8','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#84cc16'];
@@ -40,7 +41,7 @@ export default function Cartoes() {
           <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Cartões</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{cartoes.length} cartões ativos</div>
         </div>
-        <button className="btn-primary" onClick={abrirNovo}>+ Novo cartão</button>
+        <Button variant="primary" onClick={abrirNovo}>+ Novo cartão</Button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
@@ -132,8 +133,8 @@ export default function Cartoes() {
                   <input type="number" min="1" max="31" value={form.vencimento} onChange={e => setForm({...form, vencimento: e.target.value})} /></div>
               </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button className="btn-primary" onClick={salvar} style={{ flex: 1, justifyContent: 'center' }}>{editando ? 'Salvar' : 'Criar cartão'}</button>
+                <Button variant="secondary" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
+                <Button variant="primary" fullWidth onClick={salvar}>{editando ? 'Salvar' : 'Criar cartão'}</Button>
               </div>
             </div>
         </ModalBase>

@@ -8,6 +8,8 @@ import TransacaoDetalheModal from '@/components/organisms/TransacaoDetalheModal'
 import { TransacoesTabs, TransacoesTabela, TransacaoRow } from '@/components/organisms/transacoes';
 import type { Aba } from '@/components/organisms/transacoes';
 import { MESES } from '@/lib/format';
+import CustomSelect from '@/components/molecules/CustomSelect';
+import Button from '@/components/atoms/Button';
 
 export default function Transacoes() {
   const now = new Date();
@@ -168,19 +170,23 @@ export default function Transacoes() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button type="button" className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
+          <Button type="button" variant="ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</Button>
           <MonthPicker ano={ano} mes={mes} onChange={(a, m) => { setAno(a); setMes(m); }} />
-          <button type="button" className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
-          <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
+          <Button type="button" variant="ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</Button>
+          <Button type="button" variant="primary" onClick={() => setShowNova(true)}>+ Nova transação</Button>
         </div>
       </div>
 
       <div className="filters-row">
         <input placeholder="Buscar transação..." value={busca} onChange={e => setBusca(e.target.value)} style={{ maxWidth: '220px' }} />
-        <select aria-label="Filtrar por cartão" value={filtroCartao} onChange={e => setFiltroCartao(e.target.value)} style={{ maxWidth: '180px' }}>
-          <option value="">Todos os cartões</option>
-          {cartoes.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-        </select>
+        <CustomSelect
+          value={filtroCartao}
+          onChange={setFiltroCartao}
+          options={[
+            { value: '', label: 'Todos os cartões' },
+            ...cartoes.map((c: any) => ({ value: String(c.id), label: c.nome })),
+          ]}
+        />
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>

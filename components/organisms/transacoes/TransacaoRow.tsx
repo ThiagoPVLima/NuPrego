@@ -62,7 +62,6 @@ export default function TransacaoRow({
       <div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span className={styles.descricao}>{t.descricao}</span>
-          {projetado && <span className={styles.badge}>recorrente</span>}
         </div>
         {cats.length > 0 && (
           <div className={styles.cats}>
@@ -121,14 +120,14 @@ export default function TransacaoRow({
         {projetado ? (
           !t.cartao_id && (
             <button type="button" title="Marcar como paga" className={styles.btnPago}
-              style={{ color: '#6edab4' }} onClick={onMarcarProjetadaPaga}>✓</button>
+              style={{ color: 'var(--color-success)' }} onClick={onMarcarProjetadaPaga}>✓</button>
           )
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
             {(t.tipo === 'parcelada' && (t.meio_pagamento === 'pix' || t.meio_pagamento === 'dinheiro')) && (
               <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'}
                 className={styles.btnPago}
-                style={{ color: t.pago ? '#6edab4' : 'var(--outline-variant)' }}
+                style={{ color: t.pago ? 'var(--color-success)' : 'var(--outline-variant)' }}
                 onClick={onTogglePago}>
                 {t.pago ? '✓' : '○'}
               </button>

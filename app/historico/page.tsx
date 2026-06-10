@@ -1,5 +1,6 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
+import Button from '@/components/atoms/Button';
 
 const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -128,9 +129,9 @@ export default function Historico() {
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Evolução de gastos ao longo do tempo</div>
         </div>
         <div className="page-header-actions">
-          <button onClick={() => setAnoSel(null)} className={!anoSel ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 14px', fontSize: '13px' }}>Todos</button>
+          <Button variant={!anoSel ? 'primary' : 'secondary'} onClick={() => setAnoSel(null)}>Todos</Button>
           {anos.map(a => (
-            <button key={a} onClick={() => setAnoSel(a)} className={anoSel === a ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 14px', fontSize: '13px' }}>{a}</button>
+            <Button key={a} variant={anoSel === a ? 'primary' : 'secondary'} onClick={() => setAnoSel(a)}>{a}</Button>
           ))}
         </div>
       </div>

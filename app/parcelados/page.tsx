@@ -5,6 +5,7 @@ import CustomSelect from '@/components/molecules/CustomSelect';
 import CustomDateInput from '@/components/molecules/CustomDateInput';
 import ModalBase from '@/components/organisms/ModalBase';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
+import Button from '@/components/atoms/Button';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const hoje = new Date().toISOString().split('T')[0];
@@ -225,24 +226,16 @@ export default function Parcelados() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ padding: '8px 14px', fontSize: '13px' }}
-            onClick={() => setShowNova(true)}
-          >
-            + Novo parcelado
-          </button>
+          <Button type="button" variant="primary" onClick={() => setShowNova(true)}>+ Novo parcelado</Button>
           {filtroOpts.map(f => (
-            <button
+            <Button
               key={f.key}
               type="button"
-              className={filtro === f.key ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '8px 14px', fontSize: '13px' }}
+              variant={filtro === f.key ? 'primary' : 'secondary'}
               onClick={() => setFiltro(f.key)}
             >
               {f.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -530,24 +523,25 @@ export default function Parcelados() {
                   <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '10px' }}>ADIANTAR / QUITAR</div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {proxima && (
-                      <button type="button" className="btn-secondary" disabled={isLoading}
-                        onClick={() => adiantar(proxima, 'proxima')}
-                        style={{ fontSize: '12px', opacity: isLoading ? 0.6 : 1 }}>
-                        {adiantando?.qual === 'proxima' && adiantando.key === gKey ? '...' : `⤴ próxima (${proxima.parcela_atual}/${editando.totalParcelas})`}
-                      </button>
+                      <Button type="button" variant="secondary" size="sm" disabled={isLoading}
+                        loading={adiantando?.qual === 'proxima' && adiantando.key === gKey}
+                        onClick={() => adiantar(proxima, 'proxima')}>
+                        ⤴ próxima ({proxima.parcela_atual}/{editando.totalParcelas})
+                      </Button>
                     )}
                     {ultima && ultima.id !== proxima?.id && (
-                      <button type="button" className="btn-secondary" disabled={isLoading}
-                        onClick={() => adiantar(ultima, 'ultima')}
-                        style={{ fontSize: '12px', opacity: isLoading ? 0.6 : 1 }}>
-                        {adiantando?.qual === 'ultima' && adiantando.key === gKey ? '...' : `⤴ última (${ultima.parcela_atual}/${editando.totalParcelas})`}
-                      </button>
+                      <Button type="button" variant="secondary" size="sm" disabled={isLoading}
+                        loading={adiantando?.qual === 'ultima' && adiantando.key === gKey}
+                        onClick={() => adiantar(ultima, 'ultima')}>
+                        ⤴ última ({ultima.parcela_atual}/{editando.totalParcelas})
+                      </Button>
                     )}
-                    <button type="button" className="btn-secondary" disabled={isLoading}
+                    <Button type="button" variant="secondary" size="sm" disabled={isLoading}
+                      loading={marcandoPago === gKey}
                       onClick={marcarPago}
-                      style={{ fontSize: '12px', color: 'var(--color-success)', borderColor: 'var(--color-success-border)', opacity: isLoading ? 0.6 : 1 }}>
-                      {marcandoPago === gKey ? '...' : '✓ Tudo pago'}
-                    </button>
+                      style={{ color: 'var(--color-success)', borderColor: 'var(--color-success-border)' }}>
+                      ✓ Tudo pago
+                    </Button>
                   </div>
                 </div>
               );
@@ -609,11 +603,9 @@ export default function Parcelados() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="button" className="btn-danger" onClick={excluir} disabled={excluindo} style={{ opacity: excluindo ? 0.6 : 1 }}>
-                  {excluindo ? '...' : '✕ Excluir'}
-                </button>
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>{salvando ? 'Salvando...' : 'Salvar'}</button>
+                <Button type="button" variant="danger" onClick={excluir} loading={excluindo}>✕ Excluir</Button>
+                <Button type="button" variant="secondary" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
+                <Button type="button" variant="primary" fullWidth onClick={salvar} loading={salvando}>Salvar</Button>
               </div>
             </div>
         </ModalBase>

@@ -21,9 +21,9 @@ export const MESES_ABREV = [
 ];
 
 export const tipoCor: Record<string, string> = {
-  fixa: '#8083ff',
-  parcelada: '#ffb783',
-  avulsa: '#6edab4',
+  fixa: 'var(--color-fixa)',
+  parcelada: 'var(--color-parcelada)',
+  avulsa: 'var(--color-avulsa)',
 };
 
 export const tipoLabel: Record<string, string> = {
@@ -34,7 +34,7 @@ export const tipoLabel: Record<string, string> = {
 
 export const meioCor: Record<string, string> = {
   pix: '#00b8d4',
-  dinheiro: '#6edab4',
+  dinheiro: 'var(--color-avulsa)',
 };
 
 export const meioLabel: Record<string, string> = {

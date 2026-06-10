@@ -6,6 +6,7 @@ import CustomSelect from '@/components/molecules/CustomSelect';
 import CustomDateInput from '@/components/molecules/CustomDateInput';
 import ModalBase from '@/components/organisms/ModalBase';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
+import Button from '@/components/atoms/Button';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -284,24 +285,16 @@ export default function Fixas() {
         </div>
         <div className="page-header-actions">
           {filtroOpts.map(f => (
-            <button
+            <Button
               key={f.key}
               type="button"
-              className={filtro === f.key ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '8px 14px', fontSize: '13px' }}
+              variant={filtro === f.key ? 'primary' : 'secondary'}
               onClick={() => setFiltro(f.key)}
             >
               {f.label}
-            </button>
+            </Button>
           ))}
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ padding: '8px 14px', fontSize: '13px' }}
-            onClick={() => setShowNova(true)}
-          >
-            + Nova fixa
-          </button>
+          <Button type="button" variant="primary" onClick={() => setShowNova(true)}>+ Nova fixa</Button>
         </div>
       </div>
 
@@ -569,25 +562,21 @@ export default function Fixas() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                <button type="button" className="btn-danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>
-                  ✕ Excluir
-                </button>
+                <Button type="button" variant="danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>✕ Excluir</Button>
                 {editando.ativa && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn-secondary btn-nowrap"
+                    variant="secondary"
                     onClick={marcarTudoPago}
-                    disabled={marcandoPago || salvando}
-                    style={{ opacity: marcandoPago ? 0.6 : 1 }}
+                    loading={marcandoPago}
+                    disabled={salvando}
                   >
-                    {marcandoPago ? '...' : '✓ Tudo pago'}
-                  </button>
+                    ✓ Tudo pago
+                  </Button>
                 )}
                 <div style={{ flex: 1 }} />
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} style={{ opacity: salvando ? 0.6 : 1 }}>
-                  {salvando ? 'Salvando...' : 'Salvar'}
-                </button>
+                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
+                <Button type="button" variant="primary" onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} loading={salvando}>Salvar</Button>
               </div>
             </div>
         </ModalBase>

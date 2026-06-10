@@ -8,6 +8,7 @@ import {
   HeroCard, ByCartaoCard, ByCategoriaCard,
   FixasCard, ParcelasCard, ListModal, FiltroModal, RendaModal,
 } from '@/components/organisms/dashboard';
+import Button from '@/components/atoms/Button';
 
 type FiltroTipo = { tipo: 'cartao' | 'categoria'; key: string; label: string };
 
@@ -92,10 +93,10 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="page-header-actions">
-          <button className="btn-ghost" type="button" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
+          <Button variant="ghost" type="button" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</Button>
           <MonthPicker ano={ano} mes={mes} onChange={(a, m) => { setAno(a); setMes(m); }} />
-          <button className="btn-ghost" type="button" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
-          <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
+          <Button variant="ghost" type="button" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</Button>
+          <Button type="button" variant="primary" onClick={() => setShowNova(true)}>+ Nova transação</Button>
         </div>
       </div>
 

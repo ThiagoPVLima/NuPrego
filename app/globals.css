@@ -53,6 +53,11 @@
   --color-success: #4dddb0;
   --color-success-bg: rgba(77, 221, 176, 0.12);
   --color-success-border: rgba(77, 221, 176, 0.30);
+
+  /* ── Tipo de transação ── */
+  --color-avulsa: #6edab4;
+  --color-parcelada: #ffb783;
+  --color-fixa: #8083ff;
 }
 
 /* ══════════════════════════════════════════════
@@ -104,6 +109,11 @@ html.light {
   --color-success: #0a8a60;
   --color-success-bg: rgba(10, 138, 96, 0.10);
   --color-success-border: rgba(10, 138, 96, 0.22);
+
+  /* ── Tipo de transação ── */
+  --color-avulsa: #0a7a55;
+  --color-parcelada: #b45309;
+  --color-fixa: #4648d8;
 }
 
 html.dark { color-scheme: dark; }

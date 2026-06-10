@@ -1,5 +1,7 @@
 ﻿'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ModalBase from '@/components/organisms/ModalBase';
+import Button from '@/components/atoms/Button';
 
 const EMOJIS = [
   '🍔','🍕','🍜','🍣','🥗','🥩','🍱','☕','🍺','🍷',
@@ -197,15 +199,15 @@ export default function Configuracoes() {
                     placeholder="—"
                     style={{ width: '60px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontSize: '14px' }}
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="btn-secondary"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => salvarFechamento(c.id)}
-                    disabled={salvandoCartao === c.id}
-                    style={{ fontSize: '12px', padding: '6px 12px', opacity: salvandoCartao === c.id ? 0.6 : 1 }}
+                    loading={salvandoCartao === c.id}
                   >
-                    {salvandoCartao === c.id ? '...' : 'Salvar'}
-                  </button>
+                    Salvar
+                  </Button>
                 </div>
                 {erroCartao[c.id] && (
                   <span style={{ fontSize: '12px', color: '#f87171', fontFamily: 'JetBrains Mono, monospace' }}>{erroCartao[c.id]}</span>
@@ -223,15 +225,13 @@ export default function Configuracoes() {
             <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)' }}>Categorias</div>
             <div style={{ fontSize: '13px', color: 'var(--outline)', marginTop: '3px' }}>{cats.length} categorias cadastradas</div>
           </div>
-          <button type="button" className="btn-primary" onClick={abrirNova} style={{ fontSize: '13px', padding: '8px 16px' }}>
-            + Nova categoria
-          </button>
+          <Button type="button" variant="primary" onClick={abrirNova}>+ Nova categoria</Button>
         </div>
 
         {erroDelete && (
           <div style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             ❌ {erroDelete}
-            <button type="button" className="btn-ghost" onClick={() => setErroDelete(null)} style={{ fontSize: '13px', color: 'var(--outline)' }}>✕</button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setErroDelete(null)}>✕</Button>
           </div>
         )}
         {loadingCats ? (
@@ -249,33 +249,13 @@ export default function Configuracoes() {
                 {confirmandoDelete === c.id ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>Confirmar?</span>
-                    <button type="button" className="btn-danger" onClick={() => deletar(c.id)} disabled={deletando === c.id} style={{ fontSize: '12px', padding: '4px 10px' }}>
-                      {deletando === c.id ? '...' : 'Sim'}
-                    </button>
-                    <button type="button" className="btn-secondary" onClick={() => setConfirmandoDelete(null)} style={{ fontSize: '12px', padding: '4px 10px' }}>
-                      Não
-                    </button>
+                    <Button type="button" variant="danger" size="sm" onClick={() => deletar(c.id)} loading={deletando === c.id}>Sim</Button>
+                    <Button type="button" variant="secondary" size="sm" onClick={() => setConfirmandoDelete(null)}>Não</Button>
                   </div>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => { setErroDelete(null); abrirEditar(c); }}
-                      style={{ fontSize: '13px', padding: '4px 10px', color: 'var(--outline)' }}
-                      title="Editar"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => setConfirmandoDelete(c.id)}
-                      style={{ fontSize: '13px', padding: '4px 10px', color: '#f87171' }}
-                      title="Excluir"
-                    >
-                      ✕
-                    </button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setErroDelete(null); abrirEditar(c); }} title="Editar">✎</Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmandoDelete(c.id)} style={{ color: '#f87171' }} title="Excluir">✕</Button>
                   </>
                 )}
               </div>
@@ -329,112 +309,102 @@ export default function Configuracoes() {
 
       {/* ── Modal criar/editar categoria ── */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
-                {editando ? 'Editar categoria' : 'Nova categoria'}
-              </h2>
-              <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
+        <ModalBase
+          title={editando ? 'Editar categoria' : 'Nova categoria'}
+          onClose={() => setShowModal(false)}
+          maxWidth={380}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>NOME *</label>
+              <input
+                value={form.nome}
+                onChange={e => setForm({ ...form, nome: e.target.value })}
+                placeholder="Ex: Alimentação"
+                autoFocus
+              />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>NOME *</label>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>ÍCONE (emoji opcional)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input
-                  value={form.nome}
-                  onChange={e => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Ex: Alimentação"
-                  autoFocus
+                  value={form.icone}
+                  onChange={e => setForm({ ...form, icone: e.target.value })}
+                  placeholder="Ex: 🍔"
+                  style={{ maxWidth: '90px', fontSize: '20px', textAlign: 'center' }}
                 />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>ÍCONE (emoji opcional)</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    value={form.icone}
-                    onChange={e => setForm({ ...form, icone: e.target.value })}
-                    placeholder="Ex: 🍔"
-                    style={{ maxWidth: '90px', fontSize: '20px', textAlign: 'center' }}
-                  />
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => setShowEmojiPicker(v => !v)}
-                    style={{ fontSize: '13px', padding: '8px 14px' }}
-                  >
-                    {showEmojiPicker ? 'Fechar' : '😊 Escolher'}
-                  </button>
-                  {form.icone && (
-                    <button type="button" className="btn-ghost" onClick={() => setForm({ ...form, icone: '' })} style={{ color: 'var(--outline)', fontSize: '13px' }}>✕</button>
-                  )}
-                </div>
-                {showEmojiPicker && (
-                  <div style={{ marginTop: '8px', padding: '12px', background: 'var(--surface-low)', border: '1px solid var(--outline-variant)', borderRadius: '10px' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-                      {EMOJIS.map(e => (
-                        <button
-                          key={e}
-                          type="button"
-                          onClick={() => { setForm(f => ({ ...f, icone: e })); setShowEmojiPicker(false); }}
-                          style={{ fontSize: '22px', lineHeight: 1, padding: '6px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', transition: 'background 0.1s' }}
-                          onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--surface-high)')}
-                          onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
-                        >
-                          {e}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <Button type="button" variant="secondary" onClick={() => setShowEmojiPicker(v => !v)}>
+                  {showEmojiPicker ? 'Fechar' : '😊 Escolher'}
+                </Button>
+                {form.icone && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, icone: '' })}>✕</Button>
                 )}
               </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '8px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>COR</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                  {CORES_PRESET.map(cor => (
-                    <button
-                      key={cor}
-                      type="button"
-                      onClick={() => setForm({ ...form, cor })}
-                      style={{
-                        width: '28px', height: '28px', borderRadius: '50%', background: cor, border: 'none',
-                        cursor: 'pointer', outline: form.cor === cor ? `3px solid ${cor}` : 'none',
-                        outlineOffset: '2px', transition: 'outline 0.1s',
-                      }}
-                      title={cor}
-                    />
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
-                    type="color"
-                    aria-label="Cor personalizada"
-                    value={form.cor}
-                    onChange={e => setForm({ ...form, cor: e.target.value })}
-                    style={{ width: '40px', height: '32px', padding: '2px', borderRadius: '6px', border: '1px solid var(--outline-variant)', background: 'var(--surface-high)', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '13px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>{form.cor}</span>
-                  <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: form.cor, display: 'inline-block', flexShrink: 0 }}></span>
-                </div>
-              </div>
-
-              {erroCat && (
-                <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>
-                  ❌ {erroCat}
+              {showEmojiPicker && (
+                <div style={{ marginTop: '8px', padding: '12px', background: 'var(--surface-low)', border: '1px solid var(--outline-variant)', borderRadius: '10px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                    {EMOJIS.map(e => (
+                      <button
+                        key={e}
+                        type="button"
+                        onClick={() => { setForm(f => ({ ...f, icone: e })); setShowEmojiPicker(false); }}
+                        style={{ fontSize: '22px', lineHeight: 1, padding: '6px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', transition: 'background 0.1s' }}
+                        onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--surface-high)')}
+                        onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
+            </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-                <button type="button" className="btn-primary" onClick={salvar} disabled={salvando} style={{ flex: 1, justifyContent: 'center', opacity: salvando ? 0.6 : 1 }}>
-                  {salvando ? 'Salvando...' : editando ? 'Salvar' : 'Criar'}
-                </button>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '8px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>COR</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                {CORES_PRESET.map(cor => (
+                  <button
+                    key={cor}
+                    type="button"
+                    onClick={() => setForm({ ...form, cor })}
+                    style={{
+                      width: '28px', height: '28px', borderRadius: '50%', background: cor, border: 'none',
+                      cursor: 'pointer', outline: form.cor === cor ? `3px solid ${cor}` : 'none',
+                      outlineOffset: '2px', transition: 'outline 0.1s',
+                    }}
+                    title={cor}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="color"
+                  aria-label="Cor personalizada"
+                  value={form.cor}
+                  onChange={e => setForm({ ...form, cor: e.target.value })}
+                  style={{ width: '40px', height: '32px', padding: '2px', borderRadius: '6px', border: '1px solid var(--outline-variant)', background: 'var(--surface-high)', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '13px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>{form.cor}</span>
+                <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: form.cor, display: 'inline-block', flexShrink: 0 }}></span>
               </div>
             </div>
+
+            {erroCat && (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>
+                ❌ {erroCat}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+              <Button type="button" variant="secondary" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
+              <Button type="button" variant="primary" fullWidth onClick={salvar} loading={salvando}>
+                {editando ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
           </div>
-        </div>
+        </ModalBase>
       )}
     </div>
   );
