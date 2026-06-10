@@ -561,22 +561,18 @@ export default function Fixas() {
                   ❌ {erroSalvar}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                <Button type="button" variant="danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>✕ Excluir</Button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                 {editando.ativa && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={marcarTudoPago}
-                    loading={marcandoPago}
-                    disabled={salvando}
-                  >
-                    ✓ Tudo pago
-                  </Button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button type="button" variant="danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>✕ Excluir</Button>
+                    <Button type="button" variant="secondary" fullWidth onClick={marcarTudoPago} loading={marcandoPago} disabled={salvando}>✓ Tudo pago</Button>
+                  </div>
                 )}
-                <div style={{ flex: 1 }} />
-                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-                <Button type="button" variant="primary" onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} loading={salvando}>Salvar</Button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {!editando.ativa && <Button type="button" variant="danger" onClick={() => { setShowModal(false); setPedirConfirmacao(true); }} disabled={salvando}>✕ Excluir</Button>}
+                  <Button type="button" variant="secondary" fullWidth onClick={() => setShowModal(false)}>Cancelar</Button>
+                  <Button type="button" variant="primary" fullWidth onClick={salvar} disabled={salvando || (form.scope === 'desde' && !form.scopeData)} loading={salvando}>Salvar</Button>
+                </div>
               </div>
             </div>
         </ModalBase>
