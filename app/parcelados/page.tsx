@@ -262,11 +262,11 @@ export default function Parcelados() {
                 <div
                   className="card"
                   style={{
-                    padding: '18px 22px',
+                    padding: '20px 24px',
                     cursor: 'pointer',
-                    borderRadius: isAberta ? '12px 12px 0 0' : '12px',
+                    borderRadius: isAberta ? '20px 20px 0 0' : '20px',
                     borderBottom: isAberta ? '1px solid transparent' : undefined,
-                    borderTop: `2px solid ${sec.cor}`,
+                    borderTop: `3px solid ${sec.cor}`,
                   }}
                   onClick={() => toggleSecao(sec.key)}
                 >
@@ -307,10 +307,10 @@ export default function Parcelados() {
                 {isAberta && (
                   <div style={{
                     background: 'var(--surface-low)',
-                    border: '1px solid var(--outline-variant)',
+                    border: '1px solid var(--clay-border)',
                     borderTop: 'none',
-                    borderRadius: '0 0 12px 12px',
-                    padding: '10px 12px 12px',
+                    borderRadius: '0 0 20px 20px',
+                    padding: '12px 14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
@@ -395,7 +395,7 @@ export default function Parcelados() {
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '14px', background: 'var(--surface-low)', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '16px', background: 'var(--clay-input-bg)', border: '1px solid var(--clay-input-border)', borderRadius: '16px', boxShadow: 'var(--clay-input-shadow)' }}>
               {[
                 { label: 'PAGAS',    value: `${editando.pagas}/${editando.totalParcelas}` },
                 { label: 'TOTAL',    value: fmt(editando.valorParcela * editando.totalParcelas) },

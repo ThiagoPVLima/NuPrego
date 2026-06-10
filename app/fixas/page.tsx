@@ -319,11 +319,11 @@ export default function Fixas() {
                 <div
                   className="card"
                   style={{
-                    padding: '18px 22px',
+                    padding: '20px 24px',
                     cursor: 'pointer',
-                    borderRadius: isAberta ? '12px 12px 0 0' : '12px',
+                    borderRadius: isAberta ? '20px 20px 0 0' : '20px',
                     borderBottom: isAberta ? '1px solid transparent' : undefined,
-                    borderTop: `2px solid ${sec.cor}`,
+                    borderTop: `3px solid ${sec.cor}`,
                   }}
                   onClick={() => toggleSecao(sec.key)}
                 >
@@ -361,10 +361,10 @@ export default function Fixas() {
                 {isAberta && (
                   <div style={{
                     background: 'var(--surface-low)',
-                    border: '1px solid var(--outline-variant)',
+                    border: '1px solid var(--clay-border)',
                     borderTop: 'none',
-                    borderRadius: '0 0 12px 12px',
-                    padding: '10px 12px 12px',
+                    borderRadius: '0 0 20px 20px',
+                    padding: '12px 14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
@@ -445,7 +445,7 @@ export default function Fixas() {
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '14px', background: 'var(--surface-low)', borderRadius: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '16px', background: 'var(--clay-input-bg)', border: '1px solid var(--clay-input-border)', borderRadius: '16px', boxShadow: 'var(--clay-input-shadow)' }}>
               {[
                 { label: 'REGISTROS',  value: `${editando.mesesAtivos}x` },
                 { label: 'TOTAL PAGO', value: fmt(editando.totalPago) },
@@ -459,7 +459,7 @@ export default function Fixas() {
             </div>
 
             {/* Status ativa/inativa */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--surface-low)', borderRadius: '10px', marginBottom: '20px', border: `1px solid ${editando.ativa ? 'rgba(110,218,180,0.2)' : 'var(--outline-variant)'}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--clay-input-bg)', borderRadius: '14px', marginBottom: '20px', border: `1.5px solid ${editando.ativa ? 'rgba(77,221,176,0.3)' : 'var(--clay-input-border)'}`, boxShadow: 'var(--clay-input-shadow)' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '3px' }}>STATUS</div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: editando.ativa ? '#6edab4' : 'var(--outline)', fontFamily: 'Manrope, sans-serif' }}>

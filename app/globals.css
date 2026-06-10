@@ -264,14 +264,60 @@ input, select, textarea {
   outline: none;
   width: 100%;
   box-shadow: var(--clay-input-shadow);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary-dark) !important;
-  box-shadow: 0 0 0 3px rgba(70,72,216,0.18), 0 4px 16px rgba(70,72,216,0.10) !important;
+  box-shadow: 0 0 0 3px rgba(70,72,216,0.20), 0 6px 20px rgba(70,72,216,0.12) !important;
+}
+input:hover:not(:focus), select:hover:not(:focus), textarea:hover:not(:focus) {
+  border-color: rgba(90,110,200,0.38) !important;
+}
+html.dark input:hover:not(:focus), html.dark select:hover:not(:focus), html.dark textarea:hover:not(:focus) {
+  border-color: rgba(255,255,255,0.2) !important;
+}
+
+/* Select — remove native appearance, add custom caret */
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236e7494' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  padding-right: 38px !important;
+  cursor: pointer;
 }
 select option { background: var(--surface-card); color: var(--on-surface); }
 input::placeholder, textarea::placeholder { color: var(--outline); }
+
+/* Number inputs — hide spin buttons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Color input */
+input[type="color"] {
+  padding: 4px !important;
+  height: 40px;
+  cursor: pointer;
+}
+
+/* Label helpers */
+.input-label {
+  font-size: 11px;
+  color: var(--outline);
+  display: block;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 
 /* ══════════════════════════════════════════════
    NAV LINKS
@@ -442,8 +488,8 @@ html.light .modal-overlay {
 ══════════════════════════════════════════════ */
 @media (max-width: 767px) {
   .main-content.with-sidebar {
-    padding: 16px !important;
-    padding-top: 72px !important;
+    padding: 20px 16px !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .table-responsive-wrap { overflow-x: auto !important; scrollbar-width: none !important; }

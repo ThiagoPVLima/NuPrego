@@ -50,7 +50,11 @@
       "Bash(gh api *)",
       "Bash(mkdir -p \"C:/Users/User/.claude/skills/impeccable\")",
       "Bash(cp /tmp/impeccable_skill.md \"C:/Users/User/.claude/skills/impeccable/SKILL.md\")",
-      "Edit(~/.claude/skills/emil-design-eng/**)"
+      "Edit(~/.claude/skills/emil-design-eng/**)",
+      "Bash(grep -v \"^$\")",
+      "Bash(node .agents/skills/impeccable/scripts/context.mjs)",
+      "Bash(node .agents/skills/impeccable/scripts/detect.mjs --json app/globals.css app/page.tsx app/transacoes/page.tsx app/parcelados/page.tsx app/fixas/page.tsx)",
+      "Bash(findstr autoprefixer *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\Documents\\Projetos Pessoais\\NuPrego\\app\\api\\categorias",

@@ -64,16 +64,17 @@ export default function Cartoes() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-secondary" onClick={() => abrirEditar(c)} style={{ flex: 1, justifyContent: 'center', fontSize: '13px' }}>Editar</button>
-              <button className="btn-danger" onClick={() => excluir(c.id)}>Excluir</button>
+              <button className="btn-primary" onClick={() => abrirEditar(c)} style={{ flex: 1, justifyContent: 'center', fontSize: '13px', background: `linear-gradient(135deg, ${c.cor}cc, ${c.cor})`, boxShadow: `0 8px 24px ${c.cor}55` }}>✎ Editar</button>
+              <button className="btn-danger" onClick={() => excluir(c.id)}>✕</button>
             </div>
           </div>
         ))}
 
-        <button onClick={abrirNovo} style={{ border: '1px dashed var(--outline-variant)', background: 'transparent', borderRadius: '12px', padding: '24px', cursor: 'pointer', color: 'var(--outline)', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '140px', transition: 'all 0.2s' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary-dark)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--outline-variant)')}>
-          + Adicionar cartão
+        <button onClick={abrirNovo} style={{ border: '2px dashed var(--clay-input-border)', background: 'var(--clay-input-bg)', borderRadius: '24px', padding: '24px', cursor: 'pointer', color: 'var(--outline)', fontSize: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '160px', transition: 'all 0.2s', boxShadow: 'var(--clay-input-shadow)', fontFamily: 'Manrope, sans-serif', fontWeight: 600 }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary-dark)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--primary)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--clay-input-border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--outline)'; }}>
+          <span style={{ fontSize: '28px', opacity: 0.5 }}>＋</span>
+          Adicionar cartão
         </button>
       </div>
 
