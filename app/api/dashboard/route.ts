@@ -105,19 +105,22 @@ export async function GET(req: NextRequest) {
   });
   const porCategoria = Object.values(catMap).sort((a: any, b: any) => b.total - a.total).slice(0, 8);
 
+  const byDataDesc = (a: any, b: any) => (b.data || '').localeCompare(a.data || '');
+
   const parcelasAbertas = [
     ...txs.filter((t: any) => t.tipo === 'parcelada'),
     ...pixNext,
-  ];
+  ].sort(byDataDesc);
+
   const fixasDoMes = txs
     .filter((t: any) => t.tipo === 'fixa')
-    .sort((a: any, b: any) => a.descricao.localeCompare(b.descricao));
+    .sort(byDataDesc);
 
   return NextResponse.json({
     total, renda, saldo: renda - total,
     quantidade: txs.length + pixNext.length,
     porCartao, porTipo, porCategoria, parcelasAbertas, fixasDoMes,
     pixParceladosDoMes: pixNextTotal,
-    allTxs: [...txs, ...pixNext],
+    allTxs: [...txs, ...pixNext].sort(byDataDesc),
   });
 }
