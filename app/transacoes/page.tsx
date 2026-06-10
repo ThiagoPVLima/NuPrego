@@ -307,7 +307,7 @@ export default function Transacoes() {
 
       <div className="card" style={{ overflow: 'hidden' }}>
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {ABAS.map(a => (
             <button
               key={a.key}
@@ -319,7 +319,7 @@ export default function Transacoes() {
                 color: aba === a.key ? a.cor : 'var(--outline)',
                 fontFamily: 'Manrope, sans-serif', fontWeight: aba === a.key ? 700 : 400,
                 fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px',
-                marginBottom: '-1px', transition: 'color 0.15s',
+                marginBottom: '-1px', transition: 'color 0.15s', flexShrink: 0, whiteSpace: 'nowrap',
               }}
             >
               {a.label}
