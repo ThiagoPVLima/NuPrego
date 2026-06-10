@@ -1,5 +1,6 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
+import ModalBase from '@/components/organisms/ModalBase';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const CORES = ['#494bd6','#e91e8c','#ff6b35','#00b4d8','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#84cc16'];
@@ -110,12 +111,7 @@ export default function Cartoes() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>{editando ? 'Editar cartão' : 'Novo cartão'}</h2>
-              <button className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
-            </div>
+        <ModalBase title={editando ? 'Editar cartão' : 'Novo cartão'} onClose={() => setShowModal(false)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div><label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>NOME</label>
                 <input value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} placeholder="Ex: Cartão Nubank" /></div>
@@ -140,8 +136,7 @@ export default function Cartoes() {
                 <button className="btn-primary" onClick={salvar} style={{ flex: 1, justifyContent: 'center' }}>{editando ? 'Salvar' : 'Criar cartão'}</button>
               </div>
             </div>
-          </div>
-        </div>
+        </ModalBase>
       )}
     </div>
   );

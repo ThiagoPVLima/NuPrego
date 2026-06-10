@@ -1,3 +1,5 @@
+'use client';
+import { useEffect } from 'react';
 import Button from '@/components/atoms/Button';
 import styles from './ModalBase.module.css';
 
@@ -11,6 +13,11 @@ interface Props {
 }
 
 export default function ModalBase({ title, subheader, onClose, children, maxWidth = 480, scrollable }: Props) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div

@@ -2,6 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/molecules/CatMultiSelect';
 import ConfirmarModal from '@/components/molecules/ConfirmarModal';
+import CustomSelect from '@/components/molecules/CustomSelect';
+import CustomDateInput from '@/components/molecules/CustomDateInput';
+import ModalBase from '@/components/organisms/ModalBase';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -443,14 +446,7 @@ export default function Fixas() {
       )}
 
       {showModal && editando && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
-                {editando.descricao}
-              </h2>
-              <button type="button" className="btn-ghost" onClick={() => setShowModal(false)} style={{ fontSize: '18px' }}>✕</button>
-            </div>
+        <ModalBase title={editando.descricao} onClose={() => setShowModal(false)}>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px', padding: '16px', background: 'var(--clay-input-bg)', border: '1px solid var(--clay-input-border)', borderRadius: '16px', boxShadow: 'var(--clay-input-shadow)' }}>
               {[
@@ -522,7 +518,7 @@ export default function Fixas() {
               {form.scope === 'desde' && (
                 <div style={{ marginTop: '10px' }}>
                   <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>A PARTIR DE (DATA)</label>
-                  <input type="date" aria-label="Data de início do escopo" value={form.scopeData} onChange={e => setForm(f => ({ ...f, scopeData: e.target.value }))} />
+                  <CustomDateInput value={form.scopeData} onChange={v => setForm(f => ({ ...f, scopeData: v }))} />
                 </div>
               )}
             </div>
@@ -538,23 +534,29 @@ export default function Fixas() {
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FORMA DE PAGAMENTO</label>
-                <select
-                  aria-label="Forma de pagamento"
+                <CustomSelect
+                  label="FORMA DE PAGAMENTO"
                   value={form.meio}
-                  onChange={e => setForm({ ...form, meio: e.target.value, cartao_id: ['pix', 'dinheiro'].includes(e.target.value) ? '' : form.cartao_id })}
-                >
-                  <option value="cartao">Cartão de crédito</option>
-                  <option value="pix">Pix</option>
-                  <option value="dinheiro">Dinheiro</option>
-                </select>
+                  onChange={v => setForm({ ...form, meio: v, cartao_id: ['pix', 'dinheiro'].includes(v) ? '' : form.cartao_id })}
+                  options={[
+                    { value: 'cartao', label: 'Cartão de crédito' },
+                    { value: 'pix', label: 'Pix' },
+                    { value: 'dinheiro', label: 'Dinheiro' },
+                  ]}
+                />
               </div>
               {form.meio === 'cartao' && (
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CARTÃO</label>
-                  <select aria-label="Cartão" value={form.cartao_id} onChange={e => setForm({ ...form, cartao_id: e.target.value })}>
-                    <option value="">Sem cartão</option>
-                    {cartoes.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
+                  <CustomSelect
+                    label="CARTÃO"
+                    value={form.cartao_id}
+                    onChange={v => setForm({ ...form, cartao_id: v })}
+                    options={[
+                      { value: '', label: 'Sem cartão' },
+                      ...cartoes.map((c: any) => ({ value: String(c.id), label: c.nome })),
+                    ]}
+                  />
                 </div>
               )}
               <div>
@@ -588,8 +590,7 @@ export default function Fixas() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </ModalBase>
       )}
 
       {showNova && (
