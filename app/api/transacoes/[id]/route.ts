@@ -267,6 +267,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     meio_pagamento: body.meio_pagamento || null,
     fatura_ano,
     fatura_mes,
+    observacao: body.observacao ?? null,
   }).eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -292,6 +293,20 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
     const { error } = await delQ;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Ao excluir todos, desativa a projeção futura desta fixa
+    if (fixasTodos) {
+      const { data: existing } = await supabase
+        .from('fixas_config')
+        .select('id')
+        .ilike('descricao', thisTx.descricao)
+        .maybeSingle();
+      if (existing) {
+        await supabase.from('fixas_config').update({ ativa: false }).eq('id', existing.id);
+      } else {
+        await supabase.from('fixas_config').insert({ descricao: thisTx.descricao, ativa: false });
+      }
+    }
   } else {
     const { error } = await supabase.from('transacoes').delete().eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

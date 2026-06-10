@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import CatMultiSelect from '@/components/CatMultiSelect';
 import NovaTransacaoModal from '@/components/NovaTransacaoModal';
 import ConfirmarModal from '@/components/ConfirmarModal';
+import MonthPicker from '@/components/MonthPicker';
+import CustomSelect from '@/components/CustomSelect';
+import CustomDateInput from '@/components/CustomDateInput';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -33,7 +36,7 @@ export default function Transacoes() {
   const [filtroCartao, setFiltroCartao] = useState('');
   const [form, setForm] = useState({
     descricao: '', valor: '', data: now.toISOString().split('T')[0],
-    tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [] as number[], total_parcelas: '1',
+    tipo: 'avulsa', meio: 'cartao', cartao_id: '', categoria_ids: [] as number[], total_parcelas: '1', observacao: '',
   });
 
   const mesStr = `${ano}-${String(mes).padStart(2, '0')}`;
@@ -85,7 +88,7 @@ export default function Transacoes() {
     setForm({
       descricao: t.descricao, valor: String(t.valor), data: t.data,
       tipo: t.tipo, meio, cartao_id: String(t.cartao_id || ''),
-      categoria_ids: catIds, total_parcelas: String(t.total_parcelas || 1),
+      categoria_ids: catIds, total_parcelas: String(t.total_parcelas || 1), observacao: t.observacao || '',
     });
     setShowModal(true);
   };
@@ -100,6 +103,7 @@ export default function Transacoes() {
       categoria_ids: form.categoria_ids,
       total_parcelas: parseInt(form.total_parcelas),
       meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
+      observacao: form.observacao.trim() || null,
     };
     try {
       const r = editando
@@ -244,7 +248,7 @@ export default function Transacoes() {
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-          <span style={{ fontSize: '12px', color: t.pago ? 'var(--outline-variant)' : 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', textDecoration: t.pago ? 'line-through' : 'none' }}>
+          <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
             {projetado ? '—' : new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
           </span>
           {projetado ? (
@@ -254,10 +258,12 @@ export default function Transacoes() {
             )
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-              <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'} onClick={e => togglePago(t, e)}
-                style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}>
-                {t.pago ? '✓' : '○'}
-              </button>
+              {(t.tipo === 'parcelada' && (t.meio_pagamento === 'pix' || t.meio_pagamento === 'dinheiro')) && (
+                <button type="button" title={t.pago ? 'Marcar como não pago' : 'Marcar como pago'} onClick={e => togglePago(t, e)}
+                  style={{ fontSize: '13px', padding: '3px 5px', background: 'none', border: 'none', cursor: 'pointer', color: t.pago ? '#6edab4' : 'var(--outline-variant)', borderRadius: '4px', lineHeight: 1 }}>
+                  {t.pago ? '✓' : '○'}
+                </button>
+              )}
               <button type="button" className="btn-ghost" onClick={e => { e.stopPropagation(); setConfirmarExcluir(t); }} style={{ fontSize: '13px', padding: '4px 6px' }}>✕</button>
             </div>
           )}
@@ -285,7 +291,7 @@ export default function Transacoes() {
         </div>
         <div className="page-header-actions">
           <button type="button" className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
-          <div className="month-display">{MESES[mes-1]} {ano}</div>
+          <MonthPicker ano={ano} mes={mes} onChange={(a, m) => { setAno(a); setMes(m); }} />
           <button type="button" className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
           <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
         </div>
@@ -388,17 +394,17 @@ export default function Transacoes() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>DATA</label>
-                  <input type="date" value={form.data} onChange={e => setForm({ ...form, data: e.target.value })} />
+                  <CustomDateInput value={form.data} onChange={v => setForm({ ...form, data: v })} />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>TIPO</label>
-                  <select aria-label="Tipo" value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })}>
-                    <option value="avulsa">Avulsa</option>
-                    <option value="fixa">Fixa</option>
-                    <option value="parcelada">Parcelada</option>
-                  </select>
+                  <CustomSelect
+                    value={form.tipo}
+                    onChange={v => setForm({ ...form, tipo: v })}
+                    options={[{ value: 'avulsa', label: 'Avulsa' }, { value: 'fixa', label: 'Fixa' }, { value: 'parcelada', label: 'Parcelada' }]}
+                  />
                 </div>
                 {form.tipo === 'parcelada' && (
                   <div>
@@ -409,20 +415,20 @@ export default function Transacoes() {
               </div>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FORMA DE PAGAMENTO</label>
-                <select aria-label="Forma de pagamento" value={form.meio}
-                  onChange={e => setForm({ ...form, meio: e.target.value, cartao_id: ['pix', 'dinheiro'].includes(e.target.value) ? '' : form.cartao_id })}>
-                  <option value="cartao">Cartão de crédito</option>
-                  <option value="pix">Pix</option>
-                  <option value="dinheiro">Dinheiro</option>
-                </select>
+                <CustomSelect
+                  value={form.meio}
+                  onChange={v => setForm({ ...form, meio: v, cartao_id: ['pix', 'dinheiro'].includes(v) ? '' : form.cartao_id })}
+                  options={[{ value: 'cartao', label: 'Cartão de crédito' }, { value: 'pix', label: 'Pix' }, { value: 'dinheiro', label: 'Dinheiro' }]}
+                />
               </div>
               {form.meio === 'cartao' && (
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>CARTÃO</label>
-                  <select aria-label="Cartão" value={form.cartao_id} onChange={e => setForm({ ...form, cartao_id: e.target.value })}>
-                    <option value="">Sem cartão específico</option>
-                    {cartoes.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
+                  <CustomSelect
+                    value={form.cartao_id}
+                    onChange={v => setForm({ ...form, cartao_id: v })}
+                    options={[{ value: '', label: 'Sem cartão específico' }, ...cartoes.map((c: any) => ({ value: String(c.id), label: c.nome }))]}
+                  />
                 </div>
               )}
               <div>
@@ -437,6 +443,16 @@ export default function Transacoes() {
                   </span>
                 </div>
               )}
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--outline)', display: 'block', marginBottom: '6px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>OBSERVAÇÃO (opcional)</label>
+                <textarea
+                  value={form.observacao}
+                  onChange={e => setForm({ ...form, observacao: e.target.value })}
+                  placeholder="Alguma nota sobre esta transação..."
+                  rows={2}
+                  style={{ resize: 'vertical', minHeight: '60px' }}
+                />
+              </div>
               {erroSalvar && (
                 <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '13px' }}>
                   ❌ {erroSalvar}

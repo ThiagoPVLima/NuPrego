@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import CatMultiSelect from './CatMultiSelect';
+import CustomSelect from './CustomSelect';
+import CustomDateInput from './CustomDateInput';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const tipoCor: Record<string, string> = { fixa: '#8083ff', parcelada: '#ffb783', avulsa: '#6edab4' };
@@ -27,6 +29,7 @@ export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { 
     cartao_id: initialData?.cartao_id ?? '',
     categoria_ids: initialData?.categoria_ids ?? [] as number[],
     total_parcelas: '1',
+    observacao: '',
   });
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
@@ -75,14 +78,13 @@ export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { 
     setForm(f => ({
       ...f,
       descricao: s.descricao,
-      valor: s.valor != null ? String(s.valor) : f.valor,
       tipo: s.tipo || f.tipo,
       meio: s.meio_pagamento || (s.cartao_id ? 'cartao' : f.meio),
       cartao_id: s.cartao_id ? String(s.cartao_id) : f.cartao_id,
       categoria_ids: catIds.length ? catIds : f.categoria_ids,
     }));
     setSugestoes([]); setShowSug(false);
-    setTimeout(() => valorRef.current?.select(), 60);
+    setTimeout(() => valorRef.current?.focus(), 60);
   };
 
   const handleDescKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -108,6 +110,7 @@ export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { 
           categoria_ids: form.categoria_ids,
           total_parcelas: parseInt(form.total_parcelas) || 1,
           meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
+          observacao: form.observacao.trim() || null,
         }),
       });
       const json = await r.json();
@@ -182,18 +185,18 @@ export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { 
             </div>
             <div>
               <label style={LBL}>DATA</label>
-              <input type="date" aria-label="Data" value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))} />
+              <CustomDateInput value={form.data} onChange={v => setForm(f => ({ ...f, data: v }))} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: form.tipo === 'parcelada' ? '1fr 1fr' : '1fr', gap: '12px' }}>
             <div>
               <label style={LBL}>TIPO</label>
-              <select aria-label="Tipo" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
-                <option value="avulsa">Avulsa</option>
-                <option value="fixa">Fixa</option>
-                <option value="parcelada">Parcelada</option>
-              </select>
+              <CustomSelect
+                value={form.tipo}
+                onChange={v => setForm(f => ({ ...f, tipo: v }))}
+                options={[{ value: 'avulsa', label: 'Avulsa' }, { value: 'fixa', label: 'Fixa' }, { value: 'parcelada', label: 'Parcelada' }]}
+              />
             </div>
             {form.tipo === 'parcelada' && (
               <div>
@@ -205,26 +208,38 @@ export default function NovaTransacaoModal({ onClose, onSaved, initialData }: { 
 
           <div>
             <label style={LBL}>FORMA DE PAGAMENTO</label>
-            <select aria-label="Forma de pagamento" value={form.meio} onChange={e => setForm(f => ({ ...f, meio: e.target.value, cartao_id: ['pix', 'dinheiro'].includes(e.target.value) ? '' : f.cartao_id }))}>
-              <option value="cartao">Cartão de crédito</option>
-              <option value="pix">Pix</option>
-              <option value="dinheiro">Dinheiro</option>
-            </select>
+            <CustomSelect
+              value={form.meio}
+              onChange={v => setForm(f => ({ ...f, meio: v, cartao_id: ['pix', 'dinheiro'].includes(v) ? '' : f.cartao_id }))}
+              options={[{ value: 'cartao', label: 'Cartão de crédito' }, { value: 'pix', label: 'Pix' }, { value: 'dinheiro', label: 'Dinheiro' }]}
+            />
           </div>
 
           {form.meio === 'cartao' && (
             <div>
               <label style={LBL}>CARTÃO</label>
-              <select aria-label="Cartão" value={form.cartao_id} onChange={e => setForm(f => ({ ...f, cartao_id: e.target.value }))}>
-                <option value="">Sem cartão específico</option>
-                {cartoes.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </select>
+              <CustomSelect
+                value={form.cartao_id}
+                onChange={v => setForm(f => ({ ...f, cartao_id: v }))}
+                options={[{ value: '', label: 'Sem cartão específico' }, ...cartoes.map((c: any) => ({ value: String(c.id), label: c.nome }))]}
+              />
             </div>
           )}
 
           <div>
             <label style={LBL}>CATEGORIAS</label>
             <CatMultiSelect value={form.categoria_ids} onChange={ids => setForm(f => ({ ...f, categoria_ids: ids }))} categorias={categorias} />
+          </div>
+
+          <div>
+            <label style={LBL}>OBSERVAÇÃO (opcional)</label>
+            <textarea
+              value={form.observacao}
+              onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
+              placeholder="Alguma nota sobre esta transação..."
+              rows={2}
+              style={{ resize: 'vertical', minHeight: '60px' }}
+            />
           </div>
 
           {erro && (

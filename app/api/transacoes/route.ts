@@ -121,7 +121,7 @@ async function getFechamento(cartao_id: number | null): Promise<number | null> {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito, single_parcela, parcela_atual: parcelaAtualParam, grupo_parcela: grupoParam } = body;
+  const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito, single_parcela, parcela_atual: parcelaAtualParam, grupo_parcela: grupoParam, observacao } = body;
   const catIds: number[] = Array.isArray(categoria_ids) ? categoria_ids : [];
   const catId = catIds[0] ?? null;
   const fechamento = await getFechamento(cartao_id || null);
@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
     grupo_parcela: grupoParam || null,
     fatura_ano, fatura_mes,
     pago: pagoExplicito !== undefined ? pagoExplicito : data <= today,
+    observacao: observacao || null,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

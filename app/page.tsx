@@ -1,10 +1,13 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
 import NovaTransacaoModal from '@/components/NovaTransacaoModal';
+import TransacaoDetalheModal from '@/components/TransacaoDetalheModal';
+import MonthPicker from '@/components/MonthPicker';
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const pct = (val: number, total: number) => total > 0 ? Math.round((val / total) * 100) : 0;
+const tipoCor: Record<string, string> = { fixa: '#8083ff', parcelada: '#ffb783', avulsa: '#6edab4' };
 
 export default function Dashboard() {
   const now = new Date();
@@ -16,6 +19,10 @@ export default function Dashboard() {
   const [renda, setRenda] = useState('');
   const [showNova, setShowNova] = useState(false);
   const [showLista, setShowLista] = useState<'fixas' | 'parceladas' | null>(null);
+  const [cartoes, setCartoes] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [txDetalhe, setTxDetalhe] = useState<any>(null);
+  const [modalFiltro, setModalFiltro] = useState<{ tipo: 'cartao' | 'categoria'; key: string; label: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -27,6 +34,16 @@ export default function Dashboard() {
   }, [ano, mes]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/cartoes').then(r => r.json()),
+      fetch('/api/categorias').then(r => r.json()),
+    ]).then(([c, cat]) => {
+      setCartoes(Array.isArray(c) ? c : []);
+      setCategorias(Array.isArray(cat) ? cat : []);
+    });
+  }, []);
 
   const navMes = (d: number) => {
     let m = mes + d, a = ano;
@@ -73,7 +90,7 @@ export default function Dashboard() {
         </div>
         <div className="page-header-actions">
           <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
-          <div className="month-display">{MESES[mes-1]} {ano}</div>
+          <MonthPicker ano={ano} mes={mes} onChange={(a, m) => { setAno(a); setMes(m); }} />
           <button className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
           <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
         </div>
@@ -148,7 +165,7 @@ export default function Dashboard() {
               if (v === 0) return null;
               const p = total > 0 ? (v / total) * 100 : 0;
               return (
-                <div key={c.id} style={{ marginBottom: '14px' }}>
+                <div key={c.id} style={{ marginBottom: '14px', cursor: 'pointer' }} onClick={() => setModalFiltro({ tipo: 'cartao', key: String(c.id), label: c.nome })}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
                     <span style={{ color: 'var(--on-surface-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.cor, display: 'inline-block', flexShrink: 0 }}></span>
@@ -173,7 +190,7 @@ export default function Dashboard() {
               const v = Number(c.total || 0);
               const p = total > 0 ? (v / total) * 100 : 0;
               return (
-                <div key={c.nome} style={{ marginBottom: '14px' }}>
+                <div key={c.nome} style={{ marginBottom: '14px', cursor: 'pointer' }} onClick={() => setModalFiltro({ tipo: 'categoria', key: String(c.id), label: c.nome })}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
                     <span style={{ color: 'var(--on-surface-muted)' }}>{c.nome}</span>
                     <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{fmt(v)}</span>
@@ -199,10 +216,12 @@ export default function Dashboard() {
           {(data?.fixasDoMes || []).length === 0
             ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma fixa este mês</div>
             : (data?.fixasDoMes || []).slice(0, 8).map((f: any, i: number) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px' }}>
+              <div key={i} onClick={() => setTxDetalhe(f)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                   <span style={{ fontSize: '12px', color: f.pago ? '#6edab4' : 'var(--outline-variant)', flexShrink: 0 }}>{f.pago ? '✓' : '○'}</span>
-                  <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: f.pago ? 'line-through' : 'none' }}>
+                  <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {f.descricao}
                   </span>
                 </div>
@@ -227,7 +246,9 @@ export default function Dashboard() {
           {(data?.parcelasAbertas || []).length === 0
             ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma parcela este mês</div>
             : (data?.parcelasAbertas || []).slice(0, 5).map((p: any, i: number) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px' }}>
+              <div key={i} onClick={() => setTxDetalhe(p)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
                 <div>
                   <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
                   <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
@@ -262,10 +283,12 @@ export default function Dashboard() {
                 (data?.fixasDoMes || []).length === 0
                   ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma fixa este mês</div>
                   : (data?.fixasDoMes || []).map((f: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px' }}>
+                    <div key={i} onClick={() => setTxDetalhe(f)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                         <span style={{ fontSize: '12px', color: f.pago ? '#6edab4' : 'var(--outline-variant)', flexShrink: 0 }}>{f.pago ? '✓' : '○'}</span>
-                        <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: f.pago ? 'line-through' : 'none' }}>
+                        <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {f.descricao}
                         </span>
                       </div>
@@ -285,7 +308,9 @@ export default function Dashboard() {
                       </div>
                     )}
                     {(data?.parcelasAbertas || []).map((p: any, i: number) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px' }}>
+                      <div key={i} onClick={() => setTxDetalhe(p)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
                         <div>
                           <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
                           <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
@@ -302,6 +327,66 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Modal detalhe de transação */}
+      {txDetalhe && (
+        <TransacaoDetalheModal
+          transacao={txDetalhe}
+          cartoes={cartoes}
+          categorias={categorias}
+          onClose={() => setTxDetalhe(null)}
+          onSaved={() => { setTxDetalhe(null); setShowLista(null); load(); }}
+        />
+      )}
+
+      {/* Modal por cartão / por categoria */}
+      {modalFiltro && !txDetalhe && (() => {
+        const txsFiltrados = (data?.allTxs || []).filter((t: any) => {
+          if (modalFiltro.tipo === 'cartao') {
+            if (modalFiltro.key === 'pix') return t.meio_pagamento === 'pix';
+            if (modalFiltro.key === 'dinheiro') return t.meio_pagamento === 'dinheiro';
+            if (modalFiltro.key === 'sem_cartao') return !t.cartao_id && !t.meio_pagamento;
+            return String(t.cartao_id) === modalFiltro.key;
+          }
+          if (modalFiltro.tipo === 'categoria') {
+            const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+            return ids.includes(Number(modalFiltro.key));
+          }
+          return false;
+        });
+        const totalFiltro = txsFiltrados.reduce((s: number, t: any) => s + Number(t.valor), 0);
+        return (
+          <div className="modal-overlay" onClick={() => setModalFiltro(null)}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>{modalFiltro.label}</h2>
+                <button type="button" className="btn-ghost" onClick={() => setModalFiltro(null)} style={{ fontSize: '18px' }}>✕</button>
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
+                {txsFiltrados.length} transaç{txsFiltrados.length === 1 ? 'ão' : 'ões'} · {fmt(totalFiltro)}
+              </div>
+              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {txsFiltrados.length === 0
+                  ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma transação</div>
+                  : txsFiltrados.map((t: any, i: number) => (
+                    <div key={t.id || i} onClick={() => setTxDetalhe(t)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.descricao}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                          {t.data?.substring(0, 10).split('-').reverse().join('/')} · {t.tipo}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: tipoCor[t.tipo] || 'var(--on-surface)', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(t.valor))}</div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal renda */}
       {editRenda && (

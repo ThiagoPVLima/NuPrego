@@ -118,5 +118,6 @@ export async function GET(req: NextRequest) {
     quantidade: txs.length + pixNext.length,
     porCartao, porTipo, porCategoria, parcelasAbertas, fixasDoMes,
     pixParceladosDoMes: pixNextTotal,
+    allTxs: [...txs, ...pixNext],
   });
 }
