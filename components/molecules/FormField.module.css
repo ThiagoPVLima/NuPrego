@@ -1,0 +1,10 @@
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.gridHalf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

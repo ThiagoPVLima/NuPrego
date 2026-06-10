@@ -1,0 +1,23 @@
+.body {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--on-surface);
+  margin: 0 0 8px;
+}
+
+.detalhe {
+  font-size: 13px;
+  color: var(--outline);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}

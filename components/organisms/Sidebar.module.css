@@ -1,0 +1,231 @@
+.sidebar {
+  width: 220px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.mobileHeader {
+  display: none;
+}
+
+.backdrop {
+  display: none;
+}
+
+.logoSection {
+  padding: 0 8px;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logoInner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appName {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+}
+
+.appTagline {
+  font-size: 11px;
+  color: var(--outline-variant);
+  margin-top: 1px;
+}
+
+.closeBtn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--outline);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.closeBtn:hover {
+  background: var(--surface-high);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--outline);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--surface-high);
+  color: var(--on-surface-muted);
+}
+
+.navLink.active {
+  background: rgba(73, 75, 214, 0.18);
+  color: var(--primary);
+}
+
+.navIcon {
+  font-size: 15px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.footer {
+  padding: 16px 8px 0;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footerDate {
+  font-size: 11px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.footerUser {
+  font-size: 12px;
+  color: var(--outline);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-bottom: 2px;
+}
+
+.footerBtn {
+  background: transparent;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--outline);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+
+.footerBtn:hover {
+  background: var(--surface-high);
+  color: var(--on-surface-muted);
+}
+
+.footerBtnDanger:hover {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: transparent;
+}
+
+.footerIcon {
+  font-size: 13px;
+}
+
+.hamburgerBtn {
+  background: transparent;
+  border: none;
+  color: var(--on-surface-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.hamburgerBtn:hover {
+  background: var(--surface-high);
+}
+
+.mobileTitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+  }
+
+  .sidebar.mobileOpen {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .closeBtn {
+    display: flex;
+  }
+
+  .mobileHeader {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    z-index: 150;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 199;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .navLink, .footerBtn, .hamburgerBtn { transition: none; }
+}

@@ -1,0 +1,135 @@
+.row {
+  display: grid;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--outline-variant);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.row:hover {
+  background: var(--surface-high);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.descricao {
+  font-size: 14px;
+  color: var(--on-surface);
+}
+
+.badge {
+  font-size: 10px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface-high);
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-left: 7px;
+}
+
+.cats {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.cat {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+}
+
+.metaMobile {
+  font-size: 11px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.valor {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.meioCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--on-surface-muted);
+}
+
+.meioDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.parcela {
+  font-size: 12px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.parcelaDivisor {
+  color: var(--outline-variant);
+}
+
+.data {
+  font-size: 12px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.btnPago {
+  font-size: 13px;
+  padding: 3px 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.btnExcluir {
+  font-size: 13px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--outline);
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.btnExcluir:hover {
+  color: #f87171;
+}
+
+@media (max-width: 767px) {
+  .hideOnMobile {
+    display: none;
+  }
+}

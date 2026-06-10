@@ -1,13 +1,15 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useCallback } from 'react';
-import NovaTransacaoModal from '@/components/NovaTransacaoModal';
-import TransacaoDetalheModal from '@/components/TransacaoDetalheModal';
-import MonthPicker from '@/components/MonthPicker';
+import { MESES } from '@/lib/format';
+import MonthPicker from '@/components/molecules/MonthPicker';
+import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
+import TransacaoDetalheModal from '@/components/organisms/TransacaoDetalheModal';
+import {
+  HeroCard, ByCartaoCard, ByCategoriaCard,
+  FixasCard, ParcelasCard, ListModal, FiltroModal, RendaModal,
+} from '@/components/organisms/dashboard';
 
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-const pct = (val: number, total: number) => total > 0 ? Math.round((val / total) * 100) : 0;
-const tipoCor: Record<string, string> = { fixa: '#8083ff', parcelada: '#ffb783', avulsa: '#6edab4' };
+type FiltroTipo = { tipo: 'cartao' | 'categoria'; key: string; label: string };
 
 export default function Dashboard() {
   const now = new Date();
@@ -16,20 +18,17 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editRenda, setEditRenda] = useState(false);
-  const [renda, setRenda] = useState('');
   const [showNova, setShowNova] = useState(false);
   const [showLista, setShowLista] = useState<'fixas' | 'parceladas' | null>(null);
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [txDetalhe, setTxDetalhe] = useState<any>(null);
-  const [modalFiltro, setModalFiltro] = useState<{ tipo: 'cartao' | 'categoria'; key: string; label: string } | null>(null);
+  const [modalFiltro, setModalFiltro] = useState<FiltroTipo | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch(`/api/dashboard?ano=${ano}&mes=${mes}`);
-    const d = await r.json();
-    setData(d);
-    setRenda(String(d.renda || ''));
+    setData(await r.json());
     setLoading(false);
   }, [ano, mes]);
 
@@ -52,16 +51,6 @@ export default function Dashboard() {
     setMes(m); setAno(a);
   };
 
-  const salvarRenda = async () => {
-    await fetch('/api/meses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ano, mes, renda: parseFloat(renda) || 0 }),
-    });
-    setEditRenda(false);
-    load();
-  };
-
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
       <div style={{ color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
@@ -73,333 +62,118 @@ export default function Dashboard() {
   const parceladas = Number(data?.porTipo?.parcelada || 0);
   const avulsas = Number(data?.porTipo?.avulsa || 0);
   const rendaVal = Number(data?.renda || 0);
-  const saldo = rendaVal - total;
   const pixParceladosDoMes = Number(data?.pixParceladosDoMes || 0);
-  const nextMesLabel = (() => {
-    const m = mes === 12 ? 1 : mes + 1;
-    return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m - 1];
-  })();
+
+  const txsFiltrados = modalFiltro
+    ? (data?.allTxs || []).filter((t: any) => {
+        if (modalFiltro.tipo === 'cartao') {
+          if (modalFiltro.key === 'pix') return t.meio_pagamento === 'pix';
+          if (modalFiltro.key === 'dinheiro') return t.meio_pagamento === 'dinheiro';
+          if (modalFiltro.key === 'sem_cartao') return !t.cartao_id && !t.meio_pagamento;
+          return String(t.cartao_id) === modalFiltro.key;
+        }
+        const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length
+          ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
+        return ids.includes(Number(modalFiltro.key));
+      })
+    : [];
+
+  const onSaved = () => { setTxDetalhe(null); setShowLista(null); load(); };
 
   return (
     <div>
-      {/* Header */}
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Dashboard</h1>
-          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{data?.quantidade || 0} transações · {MESES[mes-1]} {ano}</div>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>
+            Dashboard
+          </h1>
+          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
+            {data?.quantidade || 0} transações · {MESES[mes - 1]} {ano}
+          </div>
         </div>
         <div className="page-header-actions">
-          <button className="btn-ghost" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
+          <button className="btn-ghost" type="button" onClick={() => navMes(-1)} style={{ fontSize: '18px' }}>‹</button>
           <MonthPicker ano={ano} mes={mes} onChange={(a, m) => { setAno(a); setMes(m); }} />
-          <button className="btn-ghost" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
+          <button className="btn-ghost" type="button" onClick={() => navMes(1)} style={{ fontSize: '18px' }}>›</button>
           <button type="button" className="btn-primary" onClick={() => setShowNova(true)}>+ Nova transação</button>
         </div>
       </div>
 
-      {/* Hero: total gasto */}
-      <div className="card" style={{ padding: '28px 32px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
-          <div>
-            <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '10px', textTransform: 'uppercase' }}>
-              Total gasto em {MESES[mes-1]}
-            </div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: '40px', color: '#f87171', letterSpacing: '-0.03em', lineHeight: 1 }}>
-              {fmt(total)}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            {rendaVal > 0 ? (
-              <>
-                <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '6px' }}>RENDA</div>
-                <div
-                  style={{ fontSize: '22px', fontFamily: 'Manrope, sans-serif', fontWeight: 700, color: 'var(--secondary)', cursor: 'pointer' }}
-                  onClick={() => setEditRenda(true)}
-                >
-                  {fmt(rendaVal)}
-                </div>
-                <div style={{ fontSize: '11px', color: saldo >= 0 ? 'var(--secondary)' : '#f87171', marginTop: '4px', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {saldo >= 0 ? `sobram ${fmt(saldo)}` : `estouro de ${fmt(-saldo)}`}
-                </div>
-              </>
-            ) : (
-              <button type="button" className="btn-ghost" onClick={() => setEditRenda(true)} style={{ fontSize: '12px', color: 'var(--outline)' }}>
-                + definir renda
-              </button>
-            )}
-          </div>
-        </div>
+      <HeroCard
+        total={total} fixas={fixas} parceladas={parceladas} avulsas={avulsas}
+        renda={rendaVal} mes={mes} onEditRenda={() => setEditRenda(true)}
+      />
 
-        {/* Breakdown por tipo */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {([
-            { label: 'Fixas', value: fixas, color: '#8083ff' },
-            { label: 'Parceladas', value: parceladas, color: '#ffb783' },
-            { label: 'Avulsas', value: avulsas, color: '#6edab4' },
-          ] as const).map(s => (
-            <div key={s.label}>
-              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                {s.label.toUpperCase()}
-              </div>
-              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: s.color }}>
-                {fmt(s.value)}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pct(s.value, total)}%`, height: '100%', background: s.color, borderRadius: '2px' }}></div>
-                </div>
-                <span style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>{pct(s.value, total)}%</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="two-col-grid">
+        <ByCartaoCard
+          items={data?.porCartao || []} total={total}
+          onClickItem={(key, label) => setModalFiltro({ tipo: 'cartao', key, label })}
+        />
+        <ByCategoriaCard
+          items={data?.porCategoria || []} total={total}
+          onClickItem={(key, label) => setModalFiltro({ tipo: 'categoria', key, label })}
+        />
       </div>
 
-      {/* Gastos por cartão/meio + Por categoria */}
       <div className="two-col-grid">
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>POR CARTÃO / MEIO</div>
-          {(data?.porCartao || []).filter((c: any) => c.total > 0).length === 0
-            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Nenhum gasto este mês</div>
-            : (data?.porCartao || []).map((c: any) => {
-              const v = Number(c.total || 0);
-              if (v === 0) return null;
-              const p = total > 0 ? (v / total) * 100 : 0;
-              return (
-                <div key={c.id} style={{ marginBottom: '14px', cursor: 'pointer' }} onClick={() => setModalFiltro({ tipo: 'cartao', key: String(c.id), label: c.nome })}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
-                    <span style={{ color: 'var(--on-surface-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.cor, display: 'inline-block', flexShrink: 0 }}></span>
-                      {c.nome}
-                    </span>
-                    <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{fmt(v)}</span>
-                  </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${p}%`, background: c.cor }}></div>
-                  </div>
-                </div>
-              );
-            })
-          }
-        </div>
-
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '20px' }}>POR CATEGORIA</div>
-          {(data?.porCategoria || []).length === 0
-            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Sem dados</div>
-            : (data?.porCategoria || []).map((c: any) => {
-              const v = Number(c.total || 0);
-              const p = total > 0 ? (v / total) * 100 : 0;
-              return (
-                <div key={c.nome} style={{ marginBottom: '14px', cursor: 'pointer' }} onClick={() => setModalFiltro({ tipo: 'categoria', key: String(c.id), label: c.nome })}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
-                    <span style={{ color: 'var(--on-surface-muted)' }}>{c.nome}</span>
-                    <span style={{ color: 'var(--on-surface)', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{fmt(v)}</span>
-                  </div>
-                  <div className="progress-track" style={{ height: '4px' }}>
-                    <div className="progress-fill" style={{ width: `${p}%`, background: c.cor || 'var(--primary-dark)' }}></div>
-                  </div>
-                </div>
-              );
-            })
-          }
-        </div>
-      </div>
-
-      {/* Fixas do mês + Parcelas do mês */}
-      <div className="two-col-grid">
-        {/* Fixas */}
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>FIXAS DO MÊS</div>
-            <button type="button" onClick={() => setShowLista('fixas')} style={{ fontSize: '12px', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>ver todas →</button>
-          </div>
-          {(data?.fixasDoMes || []).length === 0
-            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma fixa este mês</div>
-            : (data?.fixasDoMes || []).slice(0, 8).map((f: any, i: number) => (
-              <div key={i} onClick={() => setTxDetalhe(f)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                  <span style={{ fontSize: '12px', color: f.pago ? '#6edab4' : 'var(--outline-variant)', flexShrink: 0 }}>{f.pago ? '✓' : '○'}</span>
-                  <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {f.descricao}
-                  </span>
-                </div>
-                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: f.pago ? 'var(--outline)' : '#8083ff', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(f.valor))}</div>
-              </div>
-            ))
-          }
-        </div>
-
-        {/* Parcelas */}
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>PARCELAS DO MÊS</div>
-            <button type="button" onClick={() => setShowLista('parceladas')} style={{ fontSize: '12px', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>ver todas →</button>
-          </div>
-          {pixParceladosDoMes > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(0,184,212,0.08)', border: '1px solid rgba(0,184,212,0.18)', borderRadius: '8px', marginBottom: '10px' }}>
-              <span style={{ fontSize: '12px', color: '#00b8d4', fontFamily: 'JetBrains Mono, monospace' }}>PIX parcelados de {nextMesLabel}</span>
-              <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '13px', color: '#00b8d4' }}>{fmt(pixParceladosDoMes)}</span>
-            </div>
-          )}
-          {(data?.parcelasAbertas || []).length === 0
-            ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>Nenhuma parcela este mês</div>
-            : (data?.parcelasAbertas || []).slice(0, 5).map((p: any, i: number) => (
-              <div key={i} onClick={() => setTxDetalhe(p)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
-                <div>
-                  <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {p.parcela_atual}/{p.total_parcelas} parcelas
-                    {!p.cartao_id && <span style={{ color: '#00b8d4', marginLeft: '6px' }}>· {nextMesLabel}</span>}
-                  </div>
-                </div>
-                <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: p.cartao_id ? 'var(--tertiary)' : '#00b8d4', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
-              </div>
-            ))
-          }
-        </div>
+        <FixasCard
+          fixas={data?.fixasDoMes || []}
+          onVerTodas={() => setShowLista('fixas')}
+          onClickItem={setTxDetalhe}
+        />
+        <ParcelasCard
+          parcelas={data?.parcelasAbertas || []}
+          pixParcelados={pixParceladosDoMes}
+          mes={mes}
+          onVerTodas={() => setShowLista('parceladas')}
+          onClickItem={setTxDetalhe}
+        />
       </div>
 
       {showNova && (
-        <NovaTransacaoModal onClose={() => setShowNova(false)} onSaved={() => { setShowNova(false); load(); }} />
+        <NovaTransacaoModal
+          onClose={() => setShowNova(false)}
+          onSaved={() => { setShowNova(false); load(); }}
+        />
       )}
 
-      {/* Modal lista fixas / parcelas */}
       {showLista && (
-        <div className="modal-overlay" onClick={() => setShowLista(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>
-                {showLista === 'fixas' ? `Fixas de ${MESES[mes-1]}` : `Parcelas de ${MESES[mes-1]}`}
-              </h2>
-              <button type="button" className="btn-ghost" onClick={() => setShowLista(null)} style={{ fontSize: '18px' }}>✕</button>
-            </div>
-
-            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {showLista === 'fixas' && (
-                (data?.fixasDoMes || []).length === 0
-                  ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma fixa este mês</div>
-                  : (data?.fixasDoMes || []).map((f: any, i: number) => (
-                    <div key={i} onClick={() => setTxDetalhe(f)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                        <span style={{ fontSize: '12px', color: f.pago ? '#6edab4' : 'var(--outline-variant)', flexShrink: 0 }}>{f.pago ? '✓' : '○'}</span>
-                        <span style={{ fontSize: '13px', color: f.pago ? 'var(--outline)' : 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {f.descricao}
-                        </span>
-                      </div>
-                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: f.pago ? 'var(--outline)' : '#8083ff', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(f.valor))}</div>
-                    </div>
-                  ))
-              )}
-
-              {showLista === 'parceladas' && (
-                (data?.parcelasAbertas || []).length === 0
-                  ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma parcela este mês</div>
-                  : <>
-                    {pixParceladosDoMes > 0 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(0,184,212,0.08)', border: '1px solid rgba(0,184,212,0.18)', borderRadius: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#00b8d4', fontFamily: 'JetBrains Mono, monospace' }}>PIX parcelados de {nextMesLabel}</span>
-                        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '13px', color: '#00b8d4' }}>{fmt(pixParceladosDoMes)}</span>
-                      </div>
-                    )}
-                    {(data?.parcelasAbertas || []).map((p: any, i: number) => (
-                      <div key={i} onClick={() => setTxDetalhe(p)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
-                        <div>
-                          <div style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{p.descricao}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                            {p.parcela_atual}/{p.total_parcelas} parcelas
-                            {!p.cartao_id && <span style={{ color: '#00b8d4', marginLeft: '6px' }}>· {nextMesLabel}</span>}
-                          </div>
-                        </div>
-                        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: p.cartao_id ? 'var(--tertiary)' : '#00b8d4', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(p.valor))}</div>
-                      </div>
-                    ))}
-                  </>
-              )}
-            </div>
-          </div>
-        </div>
+        <ListModal
+          tipo={showLista}
+          fixas={data?.fixasDoMes || []}
+          parcelas={data?.parcelasAbertas || []}
+          pixParcelados={pixParceladosDoMes}
+          mes={mes}
+          onClose={() => setShowLista(null)}
+          onClickItem={setTxDetalhe}
+        />
       )}
 
-      {/* Modal detalhe de transação */}
       {txDetalhe && (
         <TransacaoDetalheModal
           transacao={txDetalhe}
           cartoes={cartoes}
           categorias={categorias}
           onClose={() => setTxDetalhe(null)}
-          onSaved={() => { setTxDetalhe(null); setShowLista(null); load(); }}
+          onSaved={onSaved}
         />
       )}
 
-      {/* Modal por cartão / por categoria */}
-      {modalFiltro && !txDetalhe && (() => {
-        const txsFiltrados = (data?.allTxs || []).filter((t: any) => {
-          if (modalFiltro.tipo === 'cartao') {
-            if (modalFiltro.key === 'pix') return t.meio_pagamento === 'pix';
-            if (modalFiltro.key === 'dinheiro') return t.meio_pagamento === 'dinheiro';
-            if (modalFiltro.key === 'sem_cartao') return !t.cartao_id && !t.meio_pagamento;
-            return String(t.cartao_id) === modalFiltro.key;
-          }
-          if (modalFiltro.tipo === 'categoria') {
-            const ids: number[] = Array.isArray(t.categoria_ids) && t.categoria_ids.length ? t.categoria_ids : (t.categoria_id ? [t.categoria_id] : []);
-            return ids.includes(Number(modalFiltro.key));
-          }
-          return false;
-        });
-        const totalFiltro = txsFiltrados.reduce((s: number, t: any) => s + Number(t.valor), 0);
-        return (
-          <div className="modal-overlay" onClick={() => setModalFiltro(null)}>
-            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: 'var(--on-surface)', margin: 0 }}>{modalFiltro.label}</h2>
-                <button type="button" className="btn-ghost" onClick={() => setModalFiltro(null)} style={{ fontSize: '18px' }}>✕</button>
-              </div>
-              <div style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
-                {txsFiltrados.length} transaç{txsFiltrados.length === 1 ? 'ão' : 'ões'} · {fmt(totalFiltro)}
-              </div>
-              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {txsFiltrados.length === 0
-                  ? <div style={{ color: 'var(--outline)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>Nenhuma transação</div>
-                  : txsFiltrados.map((t: any, i: number) => (
-                    <div key={t.id || i} onClick={() => setTxDetalhe(t)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--surface-low)', borderRadius: '8px', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-high)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-low)')}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.descricao}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                          {t.data?.substring(0, 10).split('-').reverse().join('/')} · {t.tipo}
-                        </div>
-                      </div>
-                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: tipoCor[t.tipo] || 'var(--on-surface)', flexShrink: 0, marginLeft: '12px' }}>{fmt(Number(t.valor))}</div>
-                    </div>
-                  ))
-                }
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {modalFiltro && !txDetalhe && (
+        <FiltroModal
+          label={modalFiltro.label}
+          transactions={txsFiltrados}
+          onClose={() => setModalFiltro(null)}
+          onClickItem={setTxDetalhe}
+        />
+      )}
 
-      {/* Modal renda */}
       {editRenda && (
-        <div className="modal-overlay" onClick={() => setEditRenda(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px' }}>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', marginBottom: '16px', color: 'var(--on-surface)' }}>Renda de {MESES[mes-1]}</div>
-            <input type="number" step="0.01" value={renda} onChange={e => setRenda(e.target.value)} placeholder="0,00" style={{ marginBottom: '16px' }} />
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" className="btn-secondary" onClick={() => setEditRenda(false)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
-              <button type="button" className="btn-primary" onClick={salvarRenda} style={{ flex: 1, justifyContent: 'center' }}>Salvar</button>
-            </div>
-          </div>
-        </div>
+        <RendaModal
+          mes={mes} ano={ano} renda={rendaVal}
+          onClose={() => setEditRenda(false)}
+          onSaved={() => { setEditRenda(false); load(); }}
+        />
       )}
     </div>
   );

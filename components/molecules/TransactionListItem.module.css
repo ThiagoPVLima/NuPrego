@@ -1,0 +1,83 @@
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  margin-bottom: 6px;
+}
+
+.item:last-child {
+  margin-bottom: 0;
+}
+
+.item:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.09);
+  transform: translateY(-1px);
+}
+
+.item:active {
+  transform: translateY(0);
+}
+
+html.light .item {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.06);
+}
+
+html.light .item:hover {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.1);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.status {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.content {
+  min-width: 0;
+}
+
+.desc {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface);
+}
+
+.desc.muted {
+  color: var(--outline);
+}
+
+.sub {
+  font-size: 11px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+
+.value {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item { transition: none; }
+}

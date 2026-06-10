@@ -1,0 +1,12 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  color: var(--chip-color);
+  background: var(--chip-bg);
+}

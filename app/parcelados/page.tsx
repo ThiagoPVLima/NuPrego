@@ -1,7 +1,7 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
-import CatMultiSelect from '@/components/CatMultiSelect';
-import NovaTransacaoModal from '@/components/NovaTransacaoModal';
+import CatMultiSelect from '@/components/molecules/CatMultiSelect';
+import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const hoje = new Date().toISOString().split('T')[0];

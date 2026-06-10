@@ -1,0 +1,116 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.autocompleteWrap {
+  position: relative;
+}
+
+.autocomplete {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.sugItem {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.1s;
+}
+
+.sugItem:last-child {
+  border-bottom: none;
+}
+
+.sugItem:hover,
+.sugItem.active {
+  background: var(--surface-high);
+}
+
+.sugDesc {
+  font-size: 13px;
+  color: var(--on-surface);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sugMeta {
+  font-size: 11px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+
+.sugTipoCor {
+  margin-left: 8px;
+}
+
+.sugEnter {
+  font-size: 10px;
+  color: var(--outline-variant);
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.gridHalf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gridDynamic {
+  display: grid;
+  gap: 12px;
+}
+
+.infoBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--on-surface-muted);
+  background: var(--info-bg, transparent);
+  border: 1px solid var(--info-border, transparent);
+}
+
+.errorBox {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sugItem { transition: none; }
+}

@@ -1,0 +1,109 @@
+.trigger {
+  background: var(--input-bg);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  display: block;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.trigger.open {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(73, 75, 214, 0.2);
+}
+
+.trigger.placeholder {
+  color: var(--outline);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: var(--surface-card);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.calendar {
+  padding: 16px;
+  min-width: 260px;
+}
+
+.calNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.calTitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--on-surface);
+}
+
+.dayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.dayHeader {
+  text-align: center;
+  font-size: 11px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 0;
+}
+
+.dayGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayBtn {
+  padding: 7px 0;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--on-surface-muted);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition: background 0.1s;
+}
+
+.dayBtn:hover:not(:disabled) {
+  background: var(--surface-high);
+}
+
+.dayBtn.daySelected {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.dayBtn.daySelected:hover {
+  background: var(--primary-dark);
+}
+
+.dayBtn:disabled {
+  color: transparent;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger, .dayBtn { transition: none; }
+}

@@ -1,0 +1,48 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+  color: var(--on-surface-muted);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  transition: all 0.15s;
+}
+
+.chip.selected {
+  border-color: var(--cat-color);
+  background: var(--cat-bg);
+  color: var(--cat-color);
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.check {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip { transition: none; }
+}

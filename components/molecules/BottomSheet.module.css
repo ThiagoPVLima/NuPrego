@@ -1,0 +1,30 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 400;
+}
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 401;
+  background: var(--surface-card);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 0 max(16px, env(safe-area-inset-bottom)) 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--outline-variant);
+  margin: 0 auto 12px;
+}

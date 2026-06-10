@@ -1,0 +1,71 @@
+.trigger {
+  cursor: pointer;
+  user-select: none;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--surface-card);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  min-width: 240px;
+}
+
+.yearNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.yearLabel {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--on-surface);
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.monthBtn {
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--on-surface-muted);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.monthBtn:hover {
+  background: var(--surface-high);
+}
+
+.monthBtn.selected {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.monthBtn.selected:hover {
+  background: var(--primary-dark);
+}
+
+.monthBtn.future {
+  color: var(--outline-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthBtn { transition: none; }
+}

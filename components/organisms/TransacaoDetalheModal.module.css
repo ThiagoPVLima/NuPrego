@@ -1,0 +1,177 @@
+.viewSection {
+  margin-bottom: 20px;
+}
+
+.txTitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--on-surface);
+  margin-bottom: 4px;
+}
+
+.txValor {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: #f87171;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailVal {
+  font-size: 13px;
+  color: var(--on-surface-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.detailValText {
+  font-size: 13px;
+  color: var(--on-surface-muted);
+}
+
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.obs {
+  padding: 10px 0;
+}
+
+.obsText {
+  font-size: 13px;
+  color: var(--on-surface-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.viewActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Edit mode */
+.editTitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--on-surface);
+  margin: 0 0 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gridHalf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.errorBox {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 13px;
+}
+
+.fixaNotice {
+  font-size: 12px;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 8px 12px;
+  background: var(--surface-low);
+  border-radius: 8px;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Delete mode */
+.deleteTitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #f87171;
+  margin: 0 0 12px;
+}
+
+.deleteDesc {
+  font-size: 13px;
+  color: var(--outline);
+  margin-bottom: 20px;
+}
+
+.deleteNotice {
+  font-size: 13px;
+  color: var(--outline);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.scopeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.scopeOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.1s;
+}
+
+.scopeOption.scopeSelected {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.scopeLabel {
+  font-size: 13px;
+  color: var(--on-surface);
+}
+
+.groupNotice {
+  font-size: 12px;
+  color: var(--outline);
+  margin-bottom: 16px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.deleteActions {
+  display: flex;
+  gap: 8px;
+}

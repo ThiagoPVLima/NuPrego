@@ -1,8 +1,8 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
-import CatMultiSelect from '@/components/CatMultiSelect';
-import ConfirmarModal from '@/components/ConfirmarModal';
-import NovaTransacaoModal from '@/components/NovaTransacaoModal';
+import CatMultiSelect from '@/components/molecules/CatMultiSelect';
+import ConfirmarModal from '@/components/molecules/ConfirmarModal';
+import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 

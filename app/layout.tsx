@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/organisms/Sidebar';
 import ServiceWorker from '@/components/ServiceWorker';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { createServerClient } from '@supabase/ssr';
