@@ -23,7 +23,7 @@ interface Props {
 }
 
 export default function TransacaoDetalheModal({ transacao: tx, cartoes, categorias, onClose, onSaved }: Props) {
-  const isProjetada = !!tx.projetado;
+  const isProjetada = !tx.id;
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const [form, setForm] = useState({
     descricao: tx.descricao || '',
@@ -63,13 +63,23 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
       observacao: form.observacao.trim() || null,
     };
     try {
-      const url = form.tipo === 'fixa'
-        ? `/api/transacoes/${tx.id}?fixas_todos=1`
-        : tx.grupo_parcela
-        ? `/api/transacoes/${tx.id}?grupo=${tx.grupo_parcela}`
-        : `/api/transacoes/${tx.id}`;
+      let url: string;
+      let method: string;
+      if (isProjetada) {
+        url = '/api/transacoes';
+        method = 'POST';
+      } else if (form.tipo === 'fixa') {
+        url = `/api/transacoes/${tx.id}?fixas_todos=1`;
+        method = 'PUT';
+      } else if (tx.grupo_parcela) {
+        url = `/api/transacoes/${tx.id}?grupo=${tx.grupo_parcela}`;
+        method = 'PUT';
+      } else {
+        url = `/api/transacoes/${tx.id}`;
+        method = 'PUT';
+      }
       const r = await fetch(url, {
-        method: 'PUT',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -83,6 +93,10 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
   const excluir = async () => {
     setExcluindo(true);
     try {
+      if (isProjetada) {
+        await desativarFixa();
+        return;
+      }
       let url: string;
       if (tx.tipo === 'fixa') {
         if (escopoDelete === 'todos') url = `/api/transacoes/${tx.id}?fixas_todos=1`;
@@ -114,14 +128,11 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
   };
 
   const desativarFixa = async () => {
-    try {
-      const r = await fetch('/api/fixas-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descricao: tx.descricao, ativa: false }),
-      });
-      if (r.ok) onSaved();
-    } catch { /* silent */ }
+    await fetch('/api/fixas-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ descricao: tx.descricao, ativa: false }),
+    });
   };
 
   return (
@@ -129,16 +140,9 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '999px', background: `${tipoCor[tx.tipo] || '#888'}22`, color: tipoCor[tx.tipo] || '#888', fontFamily: 'JetBrains Mono, monospace' }}>
-              {tipoLabel[tx.tipo] || tx.tipo}
-            </span>
-            {isProjetada && (
-              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '999px', background: 'var(--surface-high)', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                recorrente
-              </span>
-            )}
-          </div>
+          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '999px', background: `${tipoCor[tx.tipo] || '#888'}22`, color: tipoCor[tx.tipo] || '#888', fontFamily: 'JetBrains Mono, monospace' }}>
+            {tipoLabel[tx.tipo] || tx.tipo}
+          </span>
           <button type="button" className="btn-ghost" onClick={onClose} style={{ fontSize: '18px' }}>✕</button>
         </div>
 
@@ -197,33 +201,10 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
               )}
             </div>
 
-            {/* Ações para projetadas */}
-            {isProjetada ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={registrarPago}
-                  disabled={registrandoPago}
-                  style={{ justifyContent: 'center', opacity: registrandoPago ? 0.6 : 1 }}
-                >
-                  {registrandoPago ? 'Registrando...' : '✓ Registrar como pago'}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={desativarFixa}
-                  style={{ justifyContent: 'center', color: '#f87171', borderColor: 'rgba(239,68,68,0.3)' }}
-                >
-                  Desativar fixa nos próximos meses
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button" className="btn-danger" onClick={() => setMode('delete')}>✕ Excluir</button>
-                <button type="button" className="btn-secondary" onClick={() => setMode('edit')} style={{ flex: 1, justifyContent: 'center' }}>✎ Editar</button>
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn-danger" onClick={() => setMode('delete')}>✕ Excluir</button>
+              <button type="button" className="btn-secondary" onClick={() => setMode('edit')} style={{ flex: 1, justifyContent: 'center' }}>✎ Editar</button>
+            </div>
           </>
         )}
 
@@ -301,12 +282,20 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
         {/* Modo exclusão */}
         {mode === 'delete' && (
           <>
-            <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f87171', margin: '0 0 12px' }}>Excluir transação</h2>
+            <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f87171', margin: '0 0 12px' }}>
+              {isProjetada ? 'Desativar fixa' : 'Excluir transação'}
+            </h2>
             <p style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px' }}>
               <strong style={{ color: 'var(--on-surface)' }}>{tx.descricao}</strong> — {fmt(Number(tx.valor))}
             </p>
 
-            {tx.tipo === 'fixa' && (
+            {isProjetada && (
+              <p style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '20px', lineHeight: 1.6 }}>
+                Esta fixa não tem registro neste mês. Ao desativar, ela para de aparecer nos próximos meses.
+              </p>
+            )}
+
+            {!isProjetada && tx.tipo === 'fixa' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                 {([
                   { key: 'este', label: 'Apenas este mês' },
@@ -321,7 +310,7 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
               </div>
             )}
 
-            {tx.tipo === 'parcelada' && tx.grupo_parcela && (
+            {!isProjetada && tx.tipo === 'parcelada' && tx.grupo_parcela && (
               <p style={{ fontSize: '12px', color: 'var(--outline)', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
                 Todas as parcelas do grupo serão excluídas.
               </p>
@@ -330,7 +319,7 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" className="btn-secondary" onClick={() => setMode('view')} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
               <button type="button" className="btn-danger" onClick={excluir} disabled={excluindo} style={{ flex: 1, opacity: excluindo ? 0.6 : 1 }}>
-                {excluindo ? 'Excluindo...' : 'Confirmar exclusão'}
+                {excluindo ? '...' : isProjetada ? 'Desativar' : 'Confirmar exclusão'}
               </button>
             </div>
           </>
