@@ -1,9 +1,9 @@
 .trigger {
-  background: var(--input-bg);
-  border: 1px solid var(--outline-variant);
+  background: var(--clay-input-bg);
+  border: 1.5px solid var(--clay-input-border);
   color: var(--on-surface);
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 12px;
+  padding: 11px 16px;
   font-size: 0.875rem;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
@@ -12,12 +12,13 @@
   align-items: center;
   user-select: none;
   width: 100%;
+  box-shadow: var(--clay-input-shadow);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .trigger.open {
   border-color: var(--primary-dark);
-  box-shadow: 0 0 0 3px rgba(73, 75, 214, 0.2);
+  box-shadow: 0 0 0 3px rgba(70,72,216,0.18), 0 4px 16px rgba(70,72,216,0.10);
 }
 
 .caret {
@@ -25,6 +26,7 @@
   color: var(--outline);
   transition: transform 0.15s;
   flex-shrink: 0;
+  margin-left: 6px;
 }
 
 .caret.rotated {
@@ -33,23 +35,24 @@
 
 .popover {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   right: 0;
   z-index: 200;
-  background: var(--surface-card);
-  border: 1px solid var(--outline-variant);
-  border-radius: 10px;
+  background: var(--clay-bg);
+  border: 1px solid var(--clay-border);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--clay-shadow);
 }
 
 .sheetLabel {
-  padding: 0 16px 12px;
-  font-size: 12px;
+  padding: 14px 16px 8px;
+  font-size: 11px;
   color: var(--outline);
   font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .option {
@@ -58,9 +61,9 @@
   padding: 13px 16px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--outline-variant);
+  border-bottom: 1px solid var(--clay-border);
   color: var(--on-surface);
-  font-size: 15px;
+  font-size: 14px;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   display: flex;
@@ -74,20 +77,21 @@
 }
 
 .option:hover {
-  background: var(--surface-high);
+  background: rgba(70,72,216,0.07);
 }
 
 .option.selected {
-  background: rgba(73, 75, 214, 0.12);
+  background: linear-gradient(135deg, rgba(102,104,242,0.14), rgba(70,72,216,0.08));
   color: var(--primary);
+  font-weight: 500;
 }
 
 .option.selected:hover {
-  background: rgba(73, 75, 214, 0.16);
+  background: linear-gradient(135deg, rgba(102,104,242,0.20), rgba(70,72,216,0.12));
 }
 
 .checkmark {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--primary);
 }
 

@@ -1,21 +1,22 @@
 .trigger {
-  background: var(--input-bg);
-  border: 1px solid var(--outline-variant);
+  background: var(--clay-input-bg);
+  border: 1.5px solid var(--clay-input-border);
   color: var(--on-surface);
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 12px;
+  padding: 11px 16px;
   font-size: 0.875rem;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   user-select: none;
   width: 100%;
   display: block;
+  box-shadow: var(--clay-input-shadow);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .trigger.open {
   border-color: var(--primary-dark);
-  box-shadow: 0 0 0 3px rgba(73, 75, 214, 0.2);
+  box-shadow: 0 0 0 3px rgba(70,72,216,0.18), 0 4px 16px rgba(70,72,216,0.10);
 }
 
 .trigger.placeholder {
@@ -24,26 +25,26 @@
 
 .popover {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   z-index: 200;
-  background: var(--surface-card);
-  border: 1px solid var(--outline-variant);
-  border-radius: 12px;
+  background: var(--clay-bg);
+  border: 1px solid var(--clay-border);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--clay-shadow);
 }
 
 .calendar {
-  padding: 16px;
-  min-width: 260px;
+  padding: 20px;
+  min-width: 272px;
 }
 
 .calNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .calTitle {
@@ -57,46 +58,50 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .dayHeader {
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--outline);
   font-family: 'JetBrains Mono', monospace;
   padding: 4px 0;
+  letter-spacing: 0.04em;
 }
 
 .dayGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 3px;
 }
 
 .dayBtn {
-  padding: 7px 0;
-  border-radius: 6px;
+  padding: 8px 0;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--on-surface-muted);
   font-size: 13px;
   cursor: pointer;
   font-family: 'JetBrains Mono', monospace;
-  transition: background 0.1s;
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s;
 }
 
 .dayBtn:hover:not(:disabled) {
-  background: var(--surface-high);
+  background: rgba(70,72,216,0.10);
+  color: var(--on-surface);
 }
 
 .dayBtn.daySelected {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #6668f2 0%, #4648d8 100%);
   color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(70,72,216,0.40);
 }
 
 .dayBtn.daySelected:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #6668f2 0%, #4648d8 100%);
 }
 
 .dayBtn:disabled {

@@ -14,16 +14,24 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 11px;
+  padding: 6px 13px;
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
-  border: 1px solid var(--outline-variant);
-  background: transparent;
+  border: 1.5px solid var(--clay-input-border);
+  background: var(--clay-input-bg);
   color: var(--on-surface-muted);
   font-family: 'Manrope', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
+  box-shadow: var(--clay-input-shadow);
   transition: all 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--primary-dark);
+  color: var(--on-surface);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(70,72,216,0.15);
 }
 
 .chip.selected {
@@ -31,6 +39,12 @@
   background: var(--cat-bg);
   color: var(--cat-color);
   font-weight: 600;
+  box-shadow: 0 4px 14px var(--cat-shadow, rgba(0,0,0,0.15));
+}
+
+.chip.selected:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 .icon {
@@ -40,7 +54,7 @@
 
 .check {
   font-size: 10px;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {

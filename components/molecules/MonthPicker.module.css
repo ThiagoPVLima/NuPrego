@@ -9,19 +9,19 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 300;
-  background: var(--surface-card);
-  border: 1px solid var(--outline-variant);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  min-width: 240px;
+  background: var(--clay-bg);
+  border: 1px solid var(--clay-border);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: var(--clay-shadow);
+  min-width: 248px;
 }
 
 .yearNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .yearLabel {
@@ -34,36 +34,40 @@
 .monthGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 5px;
 }
 
 .monthBtn {
-  padding: 8px 4px;
-  border-radius: 8px;
+  padding: 9px 4px;
+  border-radius: 10px;
   border: none;
   background: transparent;
   color: var(--on-surface-muted);
   font-size: 13px;
   font-family: 'JetBrains Mono', monospace;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
 }
 
 .monthBtn:hover {
-  background: var(--surface-high);
+  background: rgba(70,72,216,0.10);
+  color: var(--on-surface);
 }
 
 .monthBtn.selected {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #6668f2 0%, #4648d8 100%);
   color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(70,72,216,0.40);
 }
 
 .monthBtn.selected:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #6668f2 0%, #4648d8 100%);
 }
 
 .monthBtn.future {
   color: var(--outline-variant);
+  opacity: 0.5;
 }
 
 @media (prefers-reduced-motion: reduce) {

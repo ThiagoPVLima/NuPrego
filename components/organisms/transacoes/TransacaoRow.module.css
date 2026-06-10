@@ -1,14 +1,19 @@
 .row {
   display: grid;
   align-items: center;
-  padding: 12px 20px;
+  padding: 13px 20px;
   border-bottom: 1px solid var(--outline-variant);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.12s, box-shadow 0.12s;
 }
 
 .row:hover {
-  background: var(--surface-high);
+  background: var(--row-hover);
+}
+
+html.light .row:hover {
+  background: rgba(70,72,216,0.05);
+  box-shadow: inset 3px 0 0 var(--primary-dark);
 }
 
 .row:last-child {

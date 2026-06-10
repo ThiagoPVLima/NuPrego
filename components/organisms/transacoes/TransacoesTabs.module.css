@@ -4,6 +4,7 @@
   background: var(--surface-low);
   overflow-x: auto;
   scrollbar-width: none;
+  border-radius: 0;
 }
 
 .tabs::-webkit-scrollbar {
@@ -11,30 +12,45 @@
 }
 
 .tab {
-  padding: 12px 20px;
+  padding: 13px 22px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 13px;
   color: var(--outline);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: -1px;
-  transition: color 0.15s;
+  transition: color 0.15s, border-color 0.15s;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
+.tab:hover {
+  color: var(--on-surface-muted);
+}
+
 .tab.active {
   font-weight: 700;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+html.light .tab.active {
+  color: var(--primary-dark);
+  border-bottom-color: var(--primary-dark);
 }
 
 .tabTotal {
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab { transition: none; }
 }
