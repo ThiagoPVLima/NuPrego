@@ -307,7 +307,7 @@ export default function Transacoes() {
 
       <div className="card" style={{ overflow: 'hidden' }}>
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        <div className="tabs-scroll" style={{ display: 'flex', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-low)', overflowX: 'auto' }}>
           {ABAS.map(a => (
             <button
               key={a.key}

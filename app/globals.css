@@ -435,6 +435,8 @@ input::placeholder { color: var(--outline); }
   /* Remove scroll horizontal forçado */
   .table-responsive-wrap { overflow-x: auto !important; scrollbar-width: none !important; }
   .table-responsive-wrap::-webkit-scrollbar { display: none !important; }
+  .tabs-scroll { scrollbar-width: none !important; }
+  .tabs-scroll::-webkit-scrollbar { display: none !important; }
   .table-responsive-wrap > * { min-width: 0 !important; }
 
   /* Esconde cabeçalho (labels ficam no meta inline) */
