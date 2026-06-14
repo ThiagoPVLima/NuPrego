@@ -240,6 +240,11 @@ export default function LoginPage() {
 
         {/* Form section */}
         <div className={styles.formSection}>
+          <div className={styles.formLogoRow}>
+            <Image src="/NuPrego-Logo.png" alt="NuPrego" width={36} height={36} className={styles.formLogo} />
+            <span className={styles.formAppName}>NuPrego</span>
+          </div>
+
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
               <label className={styles.label}>E-mail</label>
