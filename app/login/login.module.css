@@ -415,19 +415,34 @@
 ════════════════════════════════ */
 .formLogoRow {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: center;
 }
 
-.formLogo { border-radius: 10px; }
+.formLogo {
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.45);
+}
 
 .formAppName {
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 26px;
   color: #fff;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.formAppTag {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
 }
 
 .formSection {
