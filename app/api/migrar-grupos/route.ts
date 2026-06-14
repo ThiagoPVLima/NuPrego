@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import { createHash } from 'crypto';
 
 // POST /api/migrar-grupos
@@ -7,6 +7,7 @@ import { createHash } from 'crypto';
 // Agrupa por descrição-base + cartao_id + total_parcelas.
 // Chame UMA VEZ para corrigir dados históricos.
 export async function POST() {
+  const supabase = await createSupabaseServer();
   const { data: txs, error } = await supabase
     .from('transacoes')
     .select('id, descricao, cartao_id, total_parcelas')

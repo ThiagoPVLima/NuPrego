@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import { calcFatura } from '@/lib/billing';
 import { randomUUID } from 'crypto';
 
+type Supabase = Awaited<ReturnType<typeof createSupabaseServer>>;
+
 export async function GET(req: NextRequest) {
+  const supabase = await createSupabaseServer();
   const { searchParams } = new URL(req.url);
   const mes = searchParams.get('mes');
   const cartao_id = searchParams.get('cartao_id');
@@ -16,7 +19,8 @@ export async function GET(req: NextRequest) {
     .from('transacoes')
     .select('*, cartoes(id,nome,cor), categorias(id,nome,icone,cor)')
     .order('data', { ascending: false })
-    .order('id', { ascending: false });
+    .order('id', { ascending: false })
+    .limit(2000);
 
   if (mes) {
     const [ano, m] = mes.split('-');
@@ -113,18 +117,19 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data);
 }
 
-async function getFechamento(cartao_id: number | null): Promise<number | null> {
+async function getFechamento(supabase: Supabase, cartao_id: number | null): Promise<number | null> {
   if (!cartao_id) return null;
   const { data } = await supabase.from('cartoes').select('fechamento').eq('id', cartao_id).single();
   return data?.fechamento ?? null;
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServer();
   const body = await req.json();
   const { descricao, valor, data, tipo, cartao_id, categoria_ids, total_parcelas, meio_pagamento, pago: pagoExplicito, single_parcela, parcela_atual: parcelaAtualParam, grupo_parcela: grupoParam, observacao } = body;
   const catIds: number[] = Array.isArray(categoria_ids) ? categoria_ids : [];
   const catId = catIds[0] ?? null;
-  const fechamento = await getFechamento(cartao_id || null);
+  const fechamento = await getFechamento(supabase, cartao_id || null);
 
   const today = new Date().toISOString().split('T')[0];
 

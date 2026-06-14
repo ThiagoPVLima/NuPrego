@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const body = await req.json();
   const { error } = await supabase.from('cartoes').update(body).eq('id', id);
@@ -10,6 +11,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const { error } = await supabase.from('cartoes').update({ ativo: false }).eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

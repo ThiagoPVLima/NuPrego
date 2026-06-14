@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import { calcFatura } from '@/lib/billing';
 import * as XLSX from 'xlsx';
 
@@ -32,6 +32,7 @@ function parseDate(v: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServer();
   const form = await req.formData();
   const file = form.get('file') as File | null;
   if (!file) return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });

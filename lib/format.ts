@@ -32,9 +32,11 @@ export const tipoLabel: Record<string, string> = {
   avulsa: 'Avulsa',
 };
 
+import { MEIO_CORES } from './constants';
+
 export const meioCor: Record<string, string> = {
-  pix: '#00b8d4',
-  dinheiro: 'var(--color-avulsa)',
+  pix: MEIO_CORES.pix,
+  dinheiro: MEIO_CORES.dinheiro,
 };
 
 export const meioLabel: Record<string, string> = {

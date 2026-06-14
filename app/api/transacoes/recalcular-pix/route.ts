@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 
 // Reverte fatura_ano/fatura_mes de parceladas PIX/dinheiro de volta ao mês da data.
 // Aplica apenas onde fatura_mes = mês da data - 1 (registros que foram deslocados).
 export async function POST() {
+  const supabase = await createSupabaseServer();
   const { data: txs, error } = await supabase
     .from('transacoes')
     .select('id, data, fatura_ano, fatura_mes')
@@ -23,6 +24,7 @@ export async function POST() {
         .from('transacoes')
         .update({ fatura_ano: dataAno, fatura_mes: dataMes })
         .eq('id', t.id);
+
       if (!updErr) updated++;
     }
   }

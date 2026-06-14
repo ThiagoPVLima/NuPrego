@@ -153,6 +153,39 @@ export default function LoginPage() {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#464554', marginBottom: '12px' }}>ou</div>
+          <a
+            href="/demo"
+            style={{
+              display: 'block',
+              background: 'rgba(180, 83, 9, 0.12)',
+              border: '1px solid rgba(180, 83, 9, 0.3)',
+              borderRadius: '10px',
+              padding: '11px',
+              color: '#f59e0b',
+              fontSize: '14px',
+              fontWeight: 600,
+              fontFamily: 'Manrope, sans-serif',
+              textDecoration: 'none',
+              transition: 'background 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(180, 83, 9, 0.2)';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(180, 83, 9, 0.5)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(180, 83, 9, 0.12)';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(180, 83, 9, 0.3)';
+            }}
+          >
+            Explorar modo demo →
+          </a>
+          <div style={{ fontSize: '11px', color: '#464554', marginTop: '8px' }}>
+            Dados fictícios · Nada é salvo
+          </div>
+        </div>
       </div>
     </div>
   );

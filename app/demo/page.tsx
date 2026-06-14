@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { MESES } from '@/lib/format';
+import { useDemoContext } from '@/contexts/DemoContext';
 import MonthPicker from '@/components/molecules/MonthPicker';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 import TransacaoDetalheModal from '@/components/organisms/TransacaoDetalheModal';
@@ -12,46 +13,17 @@ import Button from '@/components/atoms/Button';
 
 type FiltroTipo = { tipo: 'cartao' | 'categoria'; key: string; label: string };
 
-export default function Dashboard() {
-  const now = new Date();
-  const [ano, setAno] = useState(now.getFullYear());
-  const [mes, setMes] = useState(now.getMonth() + 1);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [erroLoad, setErroLoad] = useState<string | null>(null);
-  const [editRenda, setEditRenda] = useState(false);
+export default function DemoDashboard() {
+  const demo = useDemoContext();
+  const [ano, setAno] = useState(2026);
+  const [mes, setMes] = useState(6);
   const [showNova, setShowNova] = useState(false);
   const [showLista, setShowLista] = useState<'fixas' | 'parceladas' | null>(null);
-  const [cartoes, setCartoes] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<any[]>([]);
   const [txDetalhe, setTxDetalhe] = useState<any>(null);
   const [modalFiltro, setModalFiltro] = useState<FiltroTipo | null>(null);
+  const [editRenda, setEditRenda] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErroLoad(null);
-    try {
-      const r = await fetch(`/api/dashboard?ano=${ano}&mes=${mes}`);
-      if (!r.ok) { setErroLoad('Erro ao carregar dashboard.'); return; }
-      setData(await r.json());
-    } catch {
-      setErroLoad('Erro de conexão.');
-    } finally {
-      setLoading(false);
-    }
-  }, [ano, mes]);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/cartoes').then(r => r.json()),
-      fetch('/api/categorias').then(r => r.json()),
-    ]).then(([c, cat]) => {
-      setCartoes(Array.isArray(c) ? c : []);
-      setCategorias(Array.isArray(cat) ? cat : []);
-    });
-  }, []);
+  const data = demo.computeDashboard(ano, mes) as any;
 
   const navMes = (d: number) => {
     let m = mes + d, a = ano;
@@ -60,24 +32,11 @@ export default function Dashboard() {
     setMes(m); setAno(a);
   };
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
-    </div>
-  );
-
-  if (erroLoad) return (
-    <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', marginTop: '32px' }}>
-      {erroLoad}
-    </div>
-  );
-
   const total = Number(data?.total || 0);
   const fixas = Number(data?.porTipo?.fixa || 0);
   const parceladas = Number(data?.porTipo?.parcelada || 0);
   const avulsas = Number(data?.porTipo?.avulsa || 0);
   const rendaVal = Number(data?.renda || 0);
-  const pixParceladosDoMes = Number(data?.pixParceladosDoMes || 0);
 
   const txsFiltrados = modalFiltro
     ? (data?.allTxs || []).filter((t: any) => {
@@ -93,7 +52,7 @@ export default function Dashboard() {
       })
     : [];
 
-  const onSaved = () => { setTxDetalhe(null); setShowLista(null); load(); };
+  const onSaved = () => { setTxDetalhe(null); setShowLista(null); };
 
   return (
     <div>
@@ -136,7 +95,7 @@ export default function Dashboard() {
         />
         <ParcelasCard
           parcelas={data?.parcelasAbertas || []}
-          pixParcelados={pixParceladosDoMes}
+          pixParcelados={0}
           mes={mes}
           onVerTodas={() => setShowLista('parceladas')}
           onClickItem={setTxDetalhe}
@@ -145,8 +104,11 @@ export default function Dashboard() {
 
       {showNova && (
         <NovaTransacaoModal
+          cartoesList={demo.cartoes}
+          categoriasList={demo.categorias}
           onClose={() => setShowNova(false)}
-          onSaved={() => { setShowNova(false); load(); }}
+          onSaved={() => setShowNova(false)}
+          onDemoSave={demo.addTransacao}
         />
       )}
 
@@ -155,7 +117,7 @@ export default function Dashboard() {
           tipo={showLista}
           fixas={data?.fixasDoMes || []}
           parcelas={data?.parcelasAbertas || []}
-          pixParcelados={pixParceladosDoMes}
+          pixParcelados={0}
           mes={mes}
           onClose={() => setShowLista(null)}
           onClickItem={setTxDetalhe}
@@ -165,10 +127,14 @@ export default function Dashboard() {
       {txDetalhe && (
         <TransacaoDetalheModal
           transacao={txDetalhe}
-          cartoes={cartoes}
-          categorias={categorias}
+          cartoes={demo.cartoes}
+          categorias={demo.categorias}
           onClose={() => setTxDetalhe(null)}
           onSaved={onSaved}
+          demoHandlers={{
+            onUpdate: demo.updateTransacao,
+            onDelete: demo.deleteTransacao,
+          }}
         />
       )}
 
@@ -185,7 +151,8 @@ export default function Dashboard() {
         <RendaModal
           mes={mes} ano={ano} renda={rendaVal}
           onClose={() => setEditRenda(false)}
-          onSaved={() => { setEditRenda(false); load(); }}
+          onSaved={() => setEditRenda(false)}
+          onDemoSave={(renda) => demo.setRenda(ano, mes, renda)}
         />
       )}
     </div>

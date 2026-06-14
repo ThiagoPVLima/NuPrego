@@ -1,9 +1,9 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { fmt } from '@/lib/format';
 import Button from '@/components/atoms/Button';
 
 const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const fmtBar = (v: number) => {
   if (v >= 10000) return `R$${Math.round(v / 1000)}k`;
   if (v >= 1000)  return `R$${(v / 1000).toFixed(1).replace('.', ',')}k`;
@@ -13,13 +13,16 @@ const fmtBar = (v: number) => {
 export default function Historico() {
   const [dados, setDados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erroLoad, setErroLoad] = useState<string | null>(null);
   const [anos, setAnos] = useState<number[]>([]);
   const [anoSel, setAnoSel] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setErroLoad(null);
+    try {
     const [txsRes, cfgRes] = await Promise.all([
-      fetch('/api/transacoes').then(r => r.json()),
+      fetch('/api/transacoes').then(r => { if (!r.ok) throw new Error('Erro ao carregar transações'); return r.json(); }),
       fetch('/api/fixas-config').then(r => r.json()).catch(() => []),
     ]);
 
@@ -113,7 +116,11 @@ export default function Historico() {
     const anosArr = Array.from(new Set(lista.map(l => parseInt(l.periodo.split('-')[0])))).sort((a, b) => b - a) as number[];
     setAnos(anosArr);
     if (anosArr.length) setAnoSel(anosArr[0]);
-    setLoading(false);
+    } catch (e) {
+      setErroLoad(e instanceof Error ? e.message : 'Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -125,7 +132,7 @@ export default function Historico() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Histórico</h1>
+          <h1 className="page-title">Histórico</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Evolução de gastos ao longo do tempo</div>
         </div>
         <div className="page-header-actions">
@@ -136,6 +143,11 @@ export default function Historico() {
         </div>
       </div>
 
+      {erroLoad && (
+        <div style={{ padding: '16px 20px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--color-danger)', fontSize: '13px', marginBottom: '16px' }}>
+          {erroLoad}
+        </div>
+      )}
       {loading ? (
         <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
       ) : (

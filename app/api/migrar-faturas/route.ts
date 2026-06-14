@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import { calcFatura } from '@/lib/billing';
 
 const BATCH = 1000;
 
 export async function POST() {
+  const supabase = await createSupabaseServer();
   const { data: cartoes } = await supabase.from('cartoes').select('id, fechamento');
   const fechamentoMap: Record<number, number | null> = {};
   for (const c of cartoes || []) fechamentoMap[c.id] = c.fechamento ?? null;

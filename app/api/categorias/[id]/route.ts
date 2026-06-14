@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const body = await req.json();
 
@@ -15,6 +16,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const numId = parseInt(id);
 

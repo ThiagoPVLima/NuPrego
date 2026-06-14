@@ -1,5 +1,7 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { fmt } from '@/lib/format';
+import AccordionSecao from '@/components/organisms/AccordionSecao';
 import CatMultiSelect from '@/components/molecules/CatMultiSelect';
 import ConfirmarModal from '@/components/molecules/ConfirmarModal';
 import CustomSelect from '@/components/molecules/CustomSelect';
@@ -7,8 +9,6 @@ import CustomDateInput from '@/components/molecules/CustomDateInput';
 import ModalBase from '@/components/organisms/ModalBase';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 import Button from '@/components/atoms/Button';
-
-const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 const limiteAtiva = (() => {
   const d = new Date();
@@ -55,6 +55,7 @@ export default function Fixas() {
   const [categorias, setCategorias] = useState<any[]>([]);
   const [configs, setConfigs] = useState<Record<string, FixaConfig>>({});
   const [loading, setLoading] = useState(true);
+  const [erroLoad, setErroLoad] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('ativas');
   const [secoesAbertas, setSecoesAbertas] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
@@ -70,21 +71,27 @@ export default function Fixas() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [t, c, cat, cfg] = await Promise.all([
-      fetch('/api/transacoes?tipo=fixa').then(r => r.json()),
-      fetch('/api/cartoes').then(r => r.json()),
-      fetch('/api/categorias').then(r => r.json()),
-      fetch('/api/fixas-config').then(r => r.json()).catch(() => []),
-    ]);
-    setTxs(Array.isArray(t) ? t : []);
-    setCartoes(Array.isArray(c) ? c : []);
-    setCategorias(Array.isArray(cat) ? cat : []);
-    const cfgMap: Record<string, FixaConfig> = {};
-    for (const item of (Array.isArray(cfg) ? cfg : [])) {
-      cfgMap[(item.descricao || '').toLowerCase()] = { ativa: item.ativa, data_inicio: item.data_inicio };
+    setErroLoad(null);
+    try {
+      const [t, c, cat, cfg] = await Promise.all([
+        fetch('/api/transacoes?tipo=fixa').then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch('/api/cartoes').then(r => r.json()),
+        fetch('/api/categorias').then(r => r.json()),
+        fetch('/api/fixas-config').then(r => r.json()).catch(() => []),
+      ]);
+      setTxs(Array.isArray(t) ? t : []);
+      setCartoes(Array.isArray(c) ? c : []);
+      setCategorias(Array.isArray(cat) ? cat : []);
+      const cfgMap: Record<string, FixaConfig> = {};
+      for (const item of (Array.isArray(cfg) ? cfg : [])) {
+        cfgMap[(item.descricao || '').toLowerCase()] = { ativa: item.ativa, data_inicio: item.data_inicio };
+      }
+      setConfigs(cfgMap);
+    } catch {
+      setErroLoad('Erro ao carregar fixas.');
+    } finally {
+      setLoading(false);
     }
-    setConfigs(cfgMap);
-    setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -278,7 +285,7 @@ export default function Fixas() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Fixas</h1>
+          <h1 className="page-title">Fixas</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
             {totalAtivas} ativas · {fmt(totalMesGlobal)}/mês · {fmt(totalMesGlobal * 12)}/ano
           </div>
@@ -302,122 +309,69 @@ export default function Fixas() {
         <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>
           carregando...
         </div>
+      ) : erroLoad ? (
+        <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)' }}>{erroLoad}</div>
       ) : filtradas.length === 0 ? (
         <div className="card" style={{ padding: '60px', textAlign: 'center', color: 'var(--outline)' }}>
           Nenhuma conta fixa {filtro === 'ativas' ? 'ativa' : filtro === 'inativas' ? 'inativa' : ''}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {secoes.map(sec => {
-            const isAberta = secoesAbertas.has(sec.key);
-            return (
-              <div key={sec.key}>
+          {secoes.map(sec => (
+            <AccordionSecao
+              key={sec.key}
+              secaoKey={sec.key}
+              titulo={sec.titulo}
+              cor={sec.cor}
+              count={sec.itens.length}
+              countLabel={`fixa${sec.itens.length !== 1 ? 's' : ''}`}
+              stats={[
+                { label: 'TOTAL MÊS',  value: fmt(sec.totalMes),   color: 'var(--tertiary)' },
+                { label: 'TOTAL ANO',  value: fmt(sec.totalAnual), color: '#ffb783' },
+                { label: 'QTD ATIVAS', value: `${sec.itens.filter(g => g.ativa).length}`, color: 'var(--on-surface-muted)' },
+              ]}
+              aberta={secoesAbertas.has(sec.key)}
+              onToggle={() => toggleSecao(sec.key)}
+            >
+              {sec.itens.map(g => (
                 <div
-                  style={{
-                    padding: '20px 24px',
-                    cursor: 'pointer',
-                    borderRadius: isAberta ? '20px 20px 0 0' : '20px',
-                    background: `linear-gradient(135deg, ${sec.cor}28 0%, ${sec.cor}10 100%)`,
-                    border: `1.5px solid ${sec.cor}40`,
-                    boxShadow: `0 8px 32px ${sec.cor}20, 0 2px 8px rgba(0,0,0,0.08)`,
-                    transition: 'box-shadow 0.2s, border-radius 0.3s',
-                  }}
-                  onClick={() => toggleSecao(sec.key)}
+                  key={g.key}
+                  className="card"
+                  style={{ padding: '14px 18px', cursor: 'pointer', opacity: g.ativa ? 1 : 0.6 }}
+                  onClick={e => { e.stopPropagation(); abrirEditar(g); }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: sec.cor, flexShrink: 0, display: 'inline-block' }}></span>
-                      <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--on-surface)' }}>{sec.titulo}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {sec.itens.length} fixa{sec.itens.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    <span style={{
-                      color: 'var(--outline)',
-                      fontSize: '18px',
-                      display: 'inline-block',
-                      transition: 'transform 0.2s',
-                      transform: isAberta ? 'rotate(90deg)' : 'rotate(0deg)',
-                    }}>›</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    {[
-                      { label: 'TOTAL MÊS',  value: fmt(sec.totalMes),   color: 'var(--tertiary)' },
-                      { label: 'TOTAL ANO',  value: fmt(sec.totalAnual), color: '#ffb783' },
-                      { label: 'QTD ATIVAS', value: `${sec.itens.filter(g => g.ativa).length}`, color: 'var(--on-surface-muted)' },
-                    ].map(s => (
-                      <div key={s.label}>
-                        <div style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', marginBottom: '4px' }}>{s.label}</div>
-                        <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '15px', color: s.color }}>{s.value}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                        <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {g.descricao}
+                        </span>
+                        {!g.ativa && (
+                          <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--clay-input-bg)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0, border: '1px solid var(--clay-input-border)' }}>
+                            INATIVA
+                          </span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateRows: isAberta ? '1fr' : '0fr',
-                  transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}>
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{
-                      background: `${sec.cor}08`,
-                      border: `1.5px solid ${sec.cor}28`,
-                      borderTop: 'none',
-                      borderRadius: '0 0 20px 20px',
-                      padding: '12px 14px 16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                    }}>
-                      {sec.itens.map(g => (
-                        <div
-                          key={g.key}
-                          className="card"
-                          style={{ padding: '14px 18px', cursor: 'pointer', opacity: g.ativa ? 1 : 0.6 }}
-                          onClick={e => { e.stopPropagation(); abrirEditar(g); }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                                <span style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {g.descricao}
-                                </span>
-                                {!g.ativa && (
-                                  <span style={{ fontSize: '10px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', background: 'var(--clay-input-bg)', padding: '2px 7px', borderRadius: '999px', flexShrink: 0, border: '1px solid var(--clay-input-border)' }}>
-                                    INATIVA
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
-                                desde {new Date(g.primeiraData + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
-                                <span style={{ marginLeft: '6px' }}>· {g.mesesAtivos}x registrada</span>
-                                {g.categoriaId && categorias.find(c => c.id === g.categoriaId) && (
-                                  <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>
-                                    · {categorias.find(c => c.id === g.categoriaId)?.nome}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
-                              <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: g.ativa ? 'var(--tertiary)' : 'var(--outline)' }}>
-                                {fmt(g.valorAtual)}
-                                <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
-                              </div>
-                              <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                                {fmt(g.totalPago)} total
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                      <div style={{ fontSize: '11px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>
+                        desde {new Date(g.primeiraData + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                        <span style={{ marginLeft: '6px' }}>· {g.mesesAtivos}x registrada</span>
+                        {(() => { const cat = g.categoriaId ? categorias.find(c => c.id === g.categoriaId) : null; return cat ? <span style={{ marginLeft: '8px', color: 'var(--outline-variant)' }}>· {cat.nome}</span> : null; })()}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '16px' }}>
+                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '14px', color: g.ativa ? 'var(--tertiary)' : 'var(--outline)' }}>
+                        {fmt(g.valorAtual)}
+                        <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--outline)', marginLeft: '3px' }}>/mês</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {fmt(g.totalPago)} total
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </AccordionSecao>
+          ))}
         </div>
       )}
 

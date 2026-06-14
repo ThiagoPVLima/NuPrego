@@ -28,7 +28,7 @@ export default function ByCategoriaCard({ items, total, onClickItem }: Props) {
           const v = Number(c.total);
           const p = total > 0 ? (v / total) * 100 : 0;
           return (
-            <div key={c.nome} className={styles.chartRow} onClick={() => onClickItem(String(c.id), c.nome)}>
+            <div key={c.id} className={styles.chartRow} onClick={() => onClickItem(String(c.id), c.nome)}>
               <div className={styles.chartRowTop}>
                 <span className={styles.chartRowLabel}>{c.nome}</span>
                 <span className={styles.chartRowValue}>{fmt(v)}</span>

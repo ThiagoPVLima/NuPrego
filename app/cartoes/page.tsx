@@ -1,9 +1,9 @@
 ﻿'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { fmt } from '@/lib/format';
 import ModalBase from '@/components/organisms/ModalBase';
+import ConfirmarModal from '@/components/molecules/ConfirmarModal';
 import Button from '@/components/atoms/Button';
-
-const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const CORES = ['#494bd6','#e91e8c','#ff6b35','#00b4d8','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#84cc16'];
 
 export default function Cartoes() {
@@ -11,6 +11,8 @@ export default function Cartoes() {
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [form, setForm] = useState({ nome: '', cor: '#494bd6', limite: '', fechamento: '5', vencimento: '10' });
+  const [confirmandoExcluir, setConfirmandoExcluir] = useState<number | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   const load = useCallback(async () => {
     const r = await fetch('/api/cartoes');
@@ -30,15 +32,21 @@ export default function Cartoes() {
   };
 
   const excluir = async (id: number) => {
-    if (!confirm('Excluir cartão?')) return;
-    await fetch(`/api/cartoes/${id}`, { method: 'DELETE' }); load();
+    setExcluindo(true);
+    try {
+      await fetch(`/api/cartoes/${id}`, { method: 'DELETE' });
+      load();
+    } finally {
+      setExcluindo(false);
+      setConfirmandoExcluir(null);
+    }
   };
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Cartões</h1>
+          <h1 className="page-title">Cartões</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>{cartoes.length} cartões ativos</div>
         </div>
         <Button variant="primary" onClick={abrirNovo}>+ Novo cartão</Button>
@@ -94,7 +102,7 @@ export default function Cartoes() {
                 onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.18)'}
               >✎ Editar</button>
               <button
-                onClick={() => excluir(c.id)}
+                onClick={() => setConfirmandoExcluir(c.id)}
                 style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.35)', color: 'rgba(255,200,200,0.95)', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer', transition: 'background 0.15s' }}
                 onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.35)'}
                 onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.22)'}
@@ -110,6 +118,17 @@ export default function Cartoes() {
           Adicionar cartão
         </button>
       </div>
+
+      {confirmandoExcluir !== null && (
+        <ConfirmarModal
+          mensagem="Excluir cartão?"
+          detalhe="O cartão será desativado. As transações vinculadas serão mantidas."
+          textoConfirmar="Excluir"
+          confirmando={excluindo}
+          onConfirmar={() => excluir(confirmandoExcluir)}
+          onCancelar={() => setConfirmandoExcluir(null)}
+        />
+      )}
 
       {showModal && (
         <ModalBase title={editando ? 'Editar cartão' : 'Novo cartão'} onClose={() => setShowModal(false)}>

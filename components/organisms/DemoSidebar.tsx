@@ -3,66 +3,44 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { useTheme } from '@/components/ThemeProvider';
 import styles from './Sidebar.module.css';
 
 const cx = (...cls: (string | undefined | false | null)[]) => cls.filter(Boolean).join(' ');
 
 const links = [
-  { href: '/', label: 'Dashboard', icon: '◉' },
-  { href: '/transacoes', label: 'Transações', icon: '↕' },
-  { href: '/cartoes', label: 'Cartões', icon: '▣' },
-  { href: '/parcelados', label: 'Parcelados', icon: '⊞' },
-  { href: '/fixas', label: 'Fixas', icon: '↻' },
-  { href: '/historico', label: 'Histórico', icon: '◎' },
-  { href: '/configuracoes', label: 'Configurações', icon: '⚙' },
+  { href: '/demo', label: 'Dashboard', icon: '◉' },
+  { href: '/demo/transacoes', label: 'Transações', icon: '↕' },
 ];
 
 const bottomLinks = [
-  { href: '/', label: 'Início', icon: '◉' },
-  { href: '/transacoes', label: 'Transações', icon: '↕' },
-  { href: '/parcelados', label: 'Parcelados', icon: '⊞' },
-  { href: '/fixas', label: 'Fixas', icon: '↻' },
+  { href: '/demo', label: 'Início', icon: '◉' },
+  { href: '/demo/transacoes', label: 'Transações', icon: '↕' },
 ];
 
-export default function Sidebar({ userName }: { userName: string }) {
+export default function DemoSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const { theme, toggle } = useTheme();
-
-  useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  async function handleLogout() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
-
   const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+    href === '/demo' ? pathname === '/demo' : pathname.startsWith(href);
 
   const menuActive = !bottomLinks.some(l => isActive(l.href));
 
   return (
     <>
       {/* ── Desktop sidebar ── */}
-      <aside className={styles.sidebar}>
+      <aside className={styles.sidebar} style={{ position: 'relative', height: '100%', top: 'auto', overflowY: 'auto' }}>
         <div className={styles.logoSection}>
           <div className={styles.logoInner}>
             <Image src="/NuPrego-Logo.png" alt="NuPrego" width={36} height={36} loading="eager" style={{ borderRadius: '10px', objectFit: 'cover' }} />
             <div>
               <div className={styles.appName}>NuPrego</div>
-              <div className={styles.appTagline}>Controle de Gastos</div>
+              <div className={styles.appTagline}>Modo Demo</div>
             </div>
           </div>
         </div>
@@ -81,28 +59,23 @@ export default function Sidebar({ userName }: { userName: string }) {
         </nav>
 
         <div className={styles.footer}>
-          <div className={styles.footerDate}>
-            {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase()}
-          </div>
-          <div className={styles.footerUser} title={userName}>{userName}</div>
+          <div className={styles.footerUser}>Visitante</div>
           <button type="button" className={styles.footerBtn} onClick={toggle}>
             <span className={styles.footerIcon}>{theme === 'dark' ? '☀' : '☽'}</span>
             {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
           </button>
-          {installPrompt && (
-            <button type="button" className={styles.footerBtn} onClick={() => { installPrompt.prompt(); setInstallPrompt(null); }}>
-              <span className={styles.footerIcon}>⬇</span>
-              Instalar app
-            </button>
-          )}
-          <button type="button" className={cx(styles.footerBtn, styles.footerBtnDanger)} onClick={handleLogout}>
+          <button
+            type="button"
+            className={cx(styles.footerBtn, styles.footerBtnDanger)}
+            onClick={() => router.push('/login')}
+          >
             <span className={styles.footerIcon}>⎋</span>
-            Sair
+            Sair do demo
           </button>
         </div>
       </aside>
 
-      {/* ── Mobile: slide-in panel (Menu) ── */}
+      {/* ── Mobile: slide-in panel ── */}
       {mobileOpen && (
         <div className={styles.backdrop} onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
@@ -130,26 +103,24 @@ export default function Sidebar({ userName }: { userName: string }) {
         </nav>
 
         <div className={styles.mobilePanelFooter}>
-          <div className={styles.footerUser} title={userName}>{userName}</div>
+          <div className={styles.footerUser}>Visitante</div>
           <button type="button" className={styles.footerBtn} onClick={toggle}>
             <span className={styles.footerIcon}>{theme === 'dark' ? '☀' : '☽'}</span>
             {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
           </button>
-          {installPrompt && (
-            <button type="button" className={styles.footerBtn} onClick={() => { installPrompt.prompt(); setInstallPrompt(null); }}>
-              <span className={styles.footerIcon}>⬇</span>
-              Instalar app
-            </button>
-          )}
-          <button type="button" className={cx(styles.footerBtn, styles.footerBtnDanger)} onClick={handleLogout}>
+          <button
+            type="button"
+            className={cx(styles.footerBtn, styles.footerBtnDanger)}
+            onClick={() => router.push('/login')}
+          >
             <span className={styles.footerIcon}>⎋</span>
-            Sair
+            Sair do demo
           </button>
         </div>
       </div>
 
       {/* ── Mobile bottom nav ── */}
-      <nav className={styles.bottomNav} aria-label="Navegação principal">
+      <nav className={styles.bottomNav} aria-label="Navegação demo">
         {bottomLinks.map(l => (
           <Link
             key={l.href}

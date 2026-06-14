@@ -28,14 +28,13 @@
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 46px;
-  color: #f87171;
+  color: var(--color-danger);
   letter-spacing: -0.03em;
   line-height: 1;
   text-shadow: 0 4px 16px rgba(248,113,113,0.35);
 }
 
 html.light .heroTotal {
-  color: #e04040;
   text-shadow: 0 4px 20px rgba(224,64,64,0.28);
 }
 

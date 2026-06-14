@@ -10,14 +10,21 @@ interface Props {
   renda: number;
   onClose: () => void;
   onSaved: () => void;
+  onDemoSave?: (renda: number) => void;
 }
 
-export default function RendaModal({ mes, ano, renda: initialRenda, onClose, onSaved }: Props) {
+export default function RendaModal({ mes, ano, renda: initialRenda, onClose, onSaved, onDemoSave }: Props) {
   const [renda, setRenda] = useState(String(initialRenda || ''));
   const [salvando, setSalvando] = useState(false);
 
   const salvar = async () => {
     setSalvando(true);
+    if (onDemoSave) {
+      onDemoSave(parseFloat(renda) || 0);
+      setSalvando(false);
+      onSaved();
+      return;
+    }
     await fetch('/api/meses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

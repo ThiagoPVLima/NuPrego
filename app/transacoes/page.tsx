@@ -19,6 +19,7 @@ export default function Transacoes() {
   const [cartoes, setCartoes] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erroLoad, setErroLoad] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>('avulsa');
   const [showNova, setShowNova] = useState(false);
   const [novaInit, setNovaInit] = useState<any>(null);
@@ -37,24 +38,30 @@ export default function Transacoes() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const p = new URLSearchParams({ mes: mesStr });
-    if (filtroCartao) p.set('cartao_id', filtroCartao);
-    if (busca) p.set('busca', busca);
-    const pNext = new URLSearchParams({ mes: nextMesStr, tipo: 'parcelada' });
-    const pixNextFetch = filtroCartao
-      ? Promise.resolve([])
-      : fetch(`/api/transacoes?${pNext}`).then(r => r.json()).catch(() => []);
-    const [t, c, cat, pn] = await Promise.all([
-      fetch(`/api/transacoes?${p}`).then(r => r.json()),
-      fetch('/api/cartoes').then(r => r.json()),
-      fetch('/api/categorias').then(r => r.json()),
-      pixNextFetch,
-    ]);
-    setTxs(Array.isArray(t) ? t : []);
-    setCartoes(Array.isArray(c) ? c : []);
-    setCategorias(Array.isArray(cat) ? cat : []);
-    setPixNextTxs((Array.isArray(pn) ? pn : []).filter((x: any) => !x.cartao_id && !x.projetado));
-    setLoading(false);
+    setErroLoad(null);
+    try {
+      const p = new URLSearchParams({ mes: mesStr });
+      if (filtroCartao) p.set('cartao_id', filtroCartao);
+      if (busca) p.set('busca', busca);
+      const pNext = new URLSearchParams({ mes: nextMesStr, tipo: 'parcelada' });
+      const pixNextFetch = filtroCartao
+        ? Promise.resolve([])
+        : fetch(`/api/transacoes?${pNext}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const [t, c, cat, pn] = await Promise.all([
+        fetch(`/api/transacoes?${p}`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch('/api/cartoes').then(r => r.json()),
+        fetch('/api/categorias').then(r => r.json()),
+        pixNextFetch,
+      ]);
+      setTxs(Array.isArray(t) ? t : []);
+      setCartoes(Array.isArray(c) ? c : []);
+      setCategorias(Array.isArray(cat) ? cat : []);
+      setPixNextTxs((Array.isArray(pn) ? pn : []).filter((x: any) => !x.cartao_id && !x.projetado));
+    } catch {
+      setErroLoad('Erro ao carregar transações.');
+    } finally {
+      setLoading(false);
+    }
   }, [mesStr, nextMesStr, filtroCartao, busca]);
 
   useEffect(() => { load(); }, [load]);
@@ -154,9 +161,7 @@ export default function Transacoes() {
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>
-            Transações
-          </h1>
+          <h1 className="page-title">Transações</h1>
           <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>
             {txs.filter(t => !t.projetado).length} lançadas
             <span style={{ margin: '0 6px', color: 'var(--outline-variant)' }}>·</span>

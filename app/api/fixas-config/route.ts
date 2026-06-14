@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 
 export async function GET() {
   try {
+    const supabase = await createSupabaseServer();
     const { data, error } = await supabase.from('fixas_config').select('*');
     if (error) return NextResponse.json([]);
     return NextResponse.json(data || []);
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
   const { descricao, ativa, data_inicio } = body;
 
   try {
+    const supabase = await createSupabaseServer();
     const { data: existing } = await supabase
       .from('fixas_config')
       .select('id')

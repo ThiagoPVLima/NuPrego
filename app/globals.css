@@ -58,6 +58,9 @@
   --color-avulsa: #6edab4;
   --color-parcelada: #ffb783;
   --color-fixa: #8083ff;
+
+  /* ── Danger / destructive ── */
+  --color-danger: #f87171;
 }
 
 /* ══════════════════════════════════════════════
@@ -114,6 +117,9 @@ html.light {
   --color-avulsa: #0a7a55;
   --color-parcelada: #b45309;
   --color-fixa: #4648d8;
+
+  /* ── Danger / destructive ── */
+  --color-danger: #e04040;
 }
 
 html.dark { color-scheme: dark; }
@@ -475,6 +481,15 @@ html.light .modal-overlay {
 /* ══════════════════════════════════════════════
    PAGE PATTERNS
 ══════════════════════════════════════════════ */
+.page-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
 .page-header {
   display: flex;
   align-items: flex-start;

@@ -1,4 +1,5 @@
 import { fmt, MESES } from '@/lib/format';
+import { MEIO_CORES } from '@/lib/constants';
 import Button from '@/components/atoms/Button';
 import TransactionListItem from '@/components/molecules/TransactionListItem';
 import styles from './Dashboard.module.css';
@@ -49,7 +50,7 @@ export default function ParcelasCard({ parcelas, pixParcelados, mes, onVerTodas,
               key={p.id ?? i}
               descricao={p.descricao}
               valor={Number(p.valor)}
-              color={p.cartao_id ? 'var(--tertiary)' : '#00b8d4'}
+              color={p.cartao_id ? 'var(--tertiary)' : MEIO_CORES.pix}
               sub={sub}
               onClick={() => onClickItem(p)}
             />

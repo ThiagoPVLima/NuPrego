@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 
 export async function GET(req: NextRequest) {
   const q = new URL(req.url).searchParams.get('q') || '';
   if (q.length < 1) return NextResponse.json([]);
 
+  const supabase = await createSupabaseServer();
   const { data } = await supabase
     .from('transacoes')
     .select('descricao, valor, tipo, meio_pagamento, cartao_id, categoria_id, categoria_ids, data')

@@ -25,10 +25,16 @@ export default function NovaTransacaoModal({
   onClose,
   onSaved,
   initialData,
+  cartoesList,
+  categoriasList,
+  onDemoSave,
 }: {
   onClose: () => void;
   onSaved: () => void;
   initialData?: InitialData;
+  cartoesList?: any[];
+  categoriasList?: any[];
+  onDemoSave?: (data: { descricao: string; valor: number; data: string; tipo: string; cartao_id: number | null; categoria_ids: number[]; meio_pagamento: string | null; total_parcelas: number; observacao: string | null }) => void;
 }) {
   const now = new Date();
   const [form, setForm] = useState({
@@ -54,6 +60,12 @@ export default function NovaTransacaoModal({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (cartoesList !== undefined && categoriasList !== undefined) {
+      setCartoes(cartoesList);
+      setCategorias(categoriasList);
+      const t = setTimeout(() => descRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
     Promise.all([
       fetch('/api/cartoes').then(r => r.json()),
       fetch('/api/categorias').then(r => r.json()),
@@ -63,7 +75,7 @@ export default function NovaTransacaoModal({
     });
     const t = setTimeout(() => descRef.current?.focus(), 60);
     return () => clearTimeout(t);
-  }, []);
+  }, [cartoesList, categoriasList]);
 
   const fetchSugestoes = useCallback(async (q: string) => {
     if (q.length < 1) { setSugestoes([]); setShowSug(false); return; }
@@ -110,18 +122,20 @@ export default function NovaTransacaoModal({
     const v = parseFloat(form.valor.replace(',', '.'));
     if (!form.valor || isNaN(v)) { setErro('Valor inválido'); return; }
     setSalvando(true); setErro(null);
+    const payload = {
+      descricao: form.descricao.trim(), valor: v, data: form.data, tipo: form.tipo,
+      cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
+      categoria_ids: form.categoria_ids,
+      total_parcelas: parseInt(form.total_parcelas) || 1,
+      meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
+      observacao: form.observacao.trim() || null,
+    };
+    if (onDemoSave) { onDemoSave(payload); setSalvando(false); onSaved(); return; }
     try {
       const r = await fetch('/api/transacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          descricao: form.descricao.trim(), valor: v, data: form.data, tipo: form.tipo,
-          cartao_id: form.meio === 'cartao' && form.cartao_id ? parseInt(form.cartao_id) : null,
-          categoria_ids: form.categoria_ids,
-          total_parcelas: parseInt(form.total_parcelas) || 1,
-          meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
-          observacao: form.observacao.trim() || null,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await r.json();
       if (!r.ok) { setErro(json.error || 'Erro ao salvar'); return; }

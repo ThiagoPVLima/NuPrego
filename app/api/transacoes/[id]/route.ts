@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import { calcFatura } from '@/lib/billing';
 
-async function getFechamento(cartao_id: number | null): Promise<number | null> {
+type Supabase = Awaited<ReturnType<typeof createSupabaseServer>>;
+
+async function getFechamento(supabase: Supabase, cartao_id: number | null): Promise<number | null> {
   if (!cartao_id) return null;
   const { data } = await supabase.from('cartoes').select('fechamento').eq('id', cartao_id).single();
   return data?.fechamento ?? null;
 }
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const body = await req.json();
   const { searchParams } = new URL(req.url);
@@ -16,7 +19,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
   const catIds: number[] = Array.isArray(body.categoria_ids) ? body.categoria_ids : [];
   const catId = catIds[0] ?? null;
-  const fechamento = await getFechamento(body.cartao_id || null);
+  const fechamento = await getFechamento(supabase, body.cartao_id || null);
 
   // ── Fixas bulk update ──
   const fixasDsde = searchParams.get('fixas_desde');
@@ -25,7 +28,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   if (searchParams.get('adiantar')) {
     const hoje = new Date().toISOString().split('T')[0];
     const { data: tx } = await supabase.from('transacoes').select('cartao_id').eq('id', id).single();
-    const fechamento = await getFechamento(tx?.cartao_id ?? null);
+    const fechamento = await getFechamento(supabase, tx?.cartao_id ?? null);
     const { fatura_ano, fatura_mes } = calcFatura(hoje, fechamento);
     const { error } = await supabase.from('transacoes').update({ data: hoje, fatura_ano, fatura_mes, pago: true }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -60,7 +63,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         const existingNums = new Set(rows.map((r: { parcela_atual: number }) => r.parcela_atual));
         const refRow = rows[0];
         const descBase = (refRow.descricao as string).replace(/ \d+\/\d+$/, '');
-        const grupoFechamento = await getFechamento((refRow.cartao_id as number) || null);
+        const grupoFechamento = await getFechamento(supabase, (refRow.cartao_id as number) || null);
         // Calcula data da 1ª parcela retrocedendo a partir da mais antiga existente
         const refDate = new Date((refRow.data as string) + 'T12:00:00');
         const baseYear = refDate.getFullYear();
@@ -141,7 +144,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     const existingMonths = new Set((allEntries || []).map((e: { data: string }) => e.data.substring(0, 7)));
     const now = new Date();
     const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const fixaFechamento = await getFechamento(thisTx.cartao_id || null);
+    const fixaFechamento = await getFechamento(supabase, thisTx.cartao_id || null);
     const toInsert: Record<string, unknown>[] = [];
     let cursor = dataInicio.substring(0, 7);
     while (cursor <= currentYM) {
@@ -275,6 +278,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const supabase = await createSupabaseServer();
   const { id } = await context.params;
   const { searchParams } = new URL(req.url);
   const grupo = searchParams.get('grupo');

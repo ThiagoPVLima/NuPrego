@@ -13,15 +13,21 @@ import styles from './TransacaoDetalheModal.module.css';
 
 const cx = (...cls: (string | undefined | false | null)[]) => cls.filter(Boolean).join(' ');
 
+interface DemoHandlers {
+  onUpdate: (id: number, data: Record<string, unknown>) => void;
+  onDelete: (id: number) => void;
+}
+
 interface Props {
   transacao: any;
   cartoes: any[];
   categorias: any[];
   onClose: () => void;
   onSaved: () => void;
+  demoHandlers?: DemoHandlers;
 }
 
-export default function TransacaoDetalheModal({ transacao: tx, cartoes, categorias, onClose, onSaved }: Props) {
+export default function TransacaoDetalheModal({ transacao: tx, cartoes, categorias, onClose, onSaved, demoHandlers }: Props) {
   const isProjetada = !tx.id;
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const [form, setForm] = useState({
@@ -62,6 +68,10 @@ export default function TransacaoDetalheModal({ transacao: tx, cartoes, categori
       meio_pagamento: form.meio !== 'cartao' ? form.meio : null,
       observacao: form.observacao.trim() || null,
     };
+    if (demoHandlers && !isProjetada) {
+      demoHandlers.onUpdate(tx.id, payload as Record<string, unknown>);
+      setSalvando(false); onSaved(); return;
+    }
     try {
       const url = isProjetada ? '/api/transacoes'
         : form.tipo === 'fixa' ? `/api/transacoes/${tx.id}?fixas_todos=1`

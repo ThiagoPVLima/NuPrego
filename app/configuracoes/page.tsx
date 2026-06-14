@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ModalBase from '@/components/organisms/ModalBase';
+import ConfirmarModal from '@/components/molecules/ConfirmarModal';
 import Button from '@/components/atoms/Button';
 
 const EMOJIS = [
@@ -58,22 +59,34 @@ export default function Configuracoes() {
 
   const loadCats = useCallback(async () => {
     setLoadingCats(true);
-    const r = await fetch('/api/categorias');
-    const d = await r.json();
-    setCats(Array.isArray(d) ? d : []);
-    setLoadingCats(false);
+    try {
+      const r = await fetch('/api/categorias');
+      if (!r.ok) throw new Error('Erro ao carregar categorias');
+      const d = await r.json();
+      setCats(Array.isArray(d) ? d : []);
+    } catch {
+      setCats([]);
+    } finally {
+      setLoadingCats(false);
+    }
   }, []);
 
   const loadCartoes = useCallback(async () => {
     setLoadingCartoes(true);
-    const r = await fetch('/api/cartoes');
-    const d = await r.json();
-    const lista: Cartao[] = Array.isArray(d) ? d : [];
-    setCartoes(lista);
-    const map: Record<number, string> = {};
-    for (const c of lista) map[c.id] = c.fechamento ? String(c.fechamento) : '';
-    setFechamentos(map);
-    setLoadingCartoes(false);
+    try {
+      const r = await fetch('/api/cartoes');
+      if (!r.ok) throw new Error('Erro ao carregar cartões');
+      const d = await r.json();
+      const lista: Cartao[] = Array.isArray(d) ? d : [];
+      setCartoes(lista);
+      const map: Record<number, string> = {};
+      for (const c of lista) map[c.id] = c.fechamento ? String(c.fechamento) : '';
+      setFechamentos(map);
+    } catch {
+      setCartoes([]);
+    } finally {
+      setLoadingCartoes(false);
+    }
   }, []);
 
   useEffect(() => { loadCats(); loadCartoes(); }, [loadCats, loadCartoes]);
@@ -141,7 +154,6 @@ export default function Configuracoes() {
   const deletar = async (id: number) => {
     setErroDelete(null);
     setDeletando(id);
-    setConfirmandoDelete(null);
     try {
       const r = await fetch(`/api/categorias/${id}`, { method: 'DELETE' });
       if (!r.ok) {
@@ -152,6 +164,7 @@ export default function Configuracoes() {
       }
     } finally {
       setDeletando(null);
+      setConfirmandoDelete(null);
     }
   };
 
@@ -168,9 +181,11 @@ export default function Configuracoes() {
 
   return (
     <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '28px', color: 'var(--on-surface)', letterSpacing: '-0.02em', margin: 0 }}>Configurações</h1>
-        <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Categorias, cartões, importação e informações do sistema</div>
+      <div className="page-header" style={{ marginBottom: '32px' }}>
+        <div>
+          <h1 className="page-title">Configurações</h1>
+          <div style={{ color: 'var(--outline)', fontSize: '13px', marginTop: '4px' }}>Categorias, cartões, importação e informações do sistema</div>
+        </div>
       </div>
 
       {/* ── Cartões — dia de fechamento ── */}
@@ -246,18 +261,10 @@ export default function Configuracoes() {
                 {c.icone && <span style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>{c.icone}</span>}
                 <span style={{ flex: 1, fontSize: '14px', color: 'var(--on-surface)' }}>{c.nome}</span>
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--outline)' }}>{c.cor}</span>
-                {confirmandoDelete === c.id ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace' }}>Confirmar?</span>
-                    <Button type="button" variant="danger" size="sm" onClick={() => deletar(c.id)} loading={deletando === c.id}>Sim</Button>
-                    <Button type="button" variant="secondary" size="sm" onClick={() => setConfirmandoDelete(null)}>Não</Button>
-                  </div>
-                ) : (
-                  <>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => { setErroDelete(null); abrirEditar(c); }} title="Editar">✎</Button>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmandoDelete(c.id)} style={{ color: '#f87171' }} title="Excluir">✕</Button>
-                  </>
-                )}
+                <>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setErroDelete(null); abrirEditar(c); }} title="Editar">✎</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmandoDelete(c.id)} style={{ color: 'var(--color-danger)' }} title="Excluir">✕</Button>
+                </>
               </div>
             ))}
           </div>
@@ -296,7 +303,7 @@ export default function Configuracoes() {
         {[
           ['Versão', 'NuPrego 2.0'],
           ['Banco de dados', 'Supabase (PostgreSQL)'],
-          ['Frontend', 'Next.js 16 + Tailwind CSS'],
+          ['Frontend', 'Next.js 16 + CSS Modules'],
           ['Hospedagem', 'Vercel'],
           ['Histórico', 'Importação desde 2021'],
         ].map(([k, v]) => (
@@ -306,6 +313,17 @@ export default function Configuracoes() {
           </div>
         ))}
       </div>
+
+      {confirmandoDelete !== null && (
+        <ConfirmarModal
+          mensagem="Excluir categoria?"
+          detalhe="Esta ação não pode ser desfeita. As transações vinculadas perderão a categoria."
+          textoConfirmar="Excluir"
+          confirmando={deletando === confirmandoDelete}
+          onConfirmar={() => deletar(confirmandoDelete)}
+          onCancelar={() => setConfirmandoDelete(null)}
+        />
+      )}
 
       {/* ── Modal criar/editar categoria ── */}
       {showModal && (

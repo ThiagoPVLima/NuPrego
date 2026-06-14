@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServer } from '@/lib/supabase-server';
+import { MEIO_CORES } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
+  const supabase = await createSupabaseServer();
   const { searchParams } = new URL(req.url);
-  const ano = parseInt(searchParams.get('ano') || String(new Date().getFullYear()));
+  const ano = parseInt(searchParams.get('ano') ?? String(new Date().getFullYear()));
   const mes = parseInt(searchParams.get('mes') || String(new Date().getMonth() + 1));
 
   const nextMes = mes === 12 ? 1 : mes + 1;
@@ -14,7 +16,8 @@ export async function GET(req: NextRequest) {
   const [transacoes, cartoes, meses, pixParceladosNext, prevFixasRes, fixasConfigRes] = await Promise.all([
     supabase.from('transacoes')
       .select('*, cartoes(id,nome,cor), categorias(id,nome,cor)')
-      .eq('fatura_ano', ano).eq('fatura_mes', mes),
+      .eq('fatura_ano', ano).eq('fatura_mes', mes)
+      .limit(1000),
     supabase.from('cartoes').select('*').eq('ativo', true).order('id'),
     supabase.from('meses').select('*').eq('ano', ano).eq('mes', mes).single(),
     supabase.from('transacoes')
@@ -87,8 +90,8 @@ export async function GET(req: NextRequest) {
   const semCartaoTotal = sumBy(txs, t => !t.cartao_id && !t.meio_pagamento)
     + sumBy(pixNext, t => !t.cartao_id && !t.meio_pagamento);
 
-  if (pixTotal > 0) porCartao.push({ id: 'pix', nome: 'Pix', cor: '#00b8d4', total: pixTotal });
-  if (dinheiroTotal > 0) porCartao.push({ id: 'dinheiro', nome: 'Dinheiro', cor: '#6edab4', total: dinheiroTotal });
+  if (pixTotal > 0) porCartao.push({ id: 'pix', nome: 'Pix', cor: MEIO_CORES.pix, total: pixTotal });
+  if (dinheiroTotal > 0) porCartao.push({ id: 'dinheiro', nome: 'Dinheiro', cor: MEIO_CORES.dinheiro, total: dinheiroTotal });
   if (semCartaoTotal > 0) porCartao.push({ id: 'sem_cartao', nome: 'Sem cartão', cor: '#908fa0', total: semCartaoTotal });
 
   const porTipo = {
