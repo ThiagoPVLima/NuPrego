@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('fade'), 1400);
@@ -38,24 +37,8 @@ export default function LoginPage() {
     router.refresh();
   }
 
-  async function handleDemo() {
-    const demoEmail = process.env.NEXT_PUBLIC_DEMO_EMAIL;
-    const demoPwd = process.env.NEXT_PUBLIC_DEMO_PASSWORD;
-    if (!demoEmail || !demoPwd) {
-      setError('Conta demo não configurada.');
-      return;
-    }
-    setDemoLoading(true);
-    setError('');
-    const supabase = createSupabaseBrowserClient();
-    const { error: err } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPwd });
-    if (err) {
-      setError('Não foi possível acessar a conta demo.');
-      setDemoLoading(false);
-      return;
-    }
-    router.push('/');
-    router.refresh();
+  function handleDemo() {
+    router.push('/demo');
   }
 
   return (
@@ -132,8 +115,8 @@ export default function LoginPage() {
 
           <div className={styles.divider}><span>ou</span></div>
 
-          <button onClick={handleDemo} disabled={demoLoading} className={styles.btnDemo}>
-            {demoLoading ? 'Acessando...' : '✦ Criar conta'}
+          <button onClick={handleDemo} className={styles.btnDemo}>
+            ✦ Criar conta
           </button>
           <p className={styles.demoNote}>Você entrará em uma conta de demonstração</p>
         </div>
