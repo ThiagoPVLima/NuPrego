@@ -11,11 +11,18 @@ const cx = (...cls: (string | undefined | false | null)[]) => cls.filter(Boolean
 const links = [
   { href: '/demo', label: 'Dashboard', icon: '◉' },
   { href: '/demo/transacoes', label: 'Transações', icon: '↕' },
+  { href: '/demo/cartoes', label: 'Cartões', icon: '▣' },
+  { href: '/demo/parcelados', label: 'Parcelados', icon: '⊞' },
+  { href: '/demo/fixas', label: 'Fixas', icon: '↻' },
+  { href: '/demo/historico', label: 'Histórico', icon: '◎' },
+  { href: '/demo/configuracoes', label: 'Configurações', icon: '⚙' },
 ];
 
 const bottomLinks = [
   { href: '/demo', label: 'Início', icon: '◉' },
   { href: '/demo/transacoes', label: 'Transações', icon: '↕' },
+  { href: '/demo/parcelados', label: 'Parcelados', icon: '⊞' },
+  { href: '/demo/fixas', label: 'Fixas', icon: '↻' },
 ];
 
 export default function DemoSidebar() {

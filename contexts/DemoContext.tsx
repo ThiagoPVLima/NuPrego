@@ -17,12 +17,21 @@ type AddTxPayload = {
 interface DemoCtx {
   cartoes: DemoCartao[];
   categorias: DemoCategoria[];
+  fixasConfigs: Record<string, boolean>;
   computeDashboard: (ano: number, mes: number) => Record<string, unknown>;
   getTransacoes: (filters: { mes?: string; busca?: string; tipo?: string; cartao_id?: string }) => unknown[];
   addTransacao: (payload: AddTxPayload) => void;
   updateTransacao: (id: number, payload: Partial<DemoTx>) => void;
+  batchUpdateTransacoes: (updates: Array<{ id: number; payload: Partial<DemoTx> }>) => void;
   deleteTransacao: (id: number) => void;
   setRenda: (ano: number, mes: number, renda: number) => void;
+  setFixaAtiva: (descricao: string, ativa: boolean) => void;
+  addCartao: (cartao: Omit<DemoCartao, 'id'>) => void;
+  updateCartao: (id: number, payload: Partial<DemoCartao>) => void;
+  deleteCartao: (id: number) => void;
+  addCategoria: (cat: Omit<DemoCategoria, 'id'>) => void;
+  updateCategoria: (id: number, payload: Partial<DemoCategoria>) => void;
+  deleteCategoria: (id: number) => void;
 }
 
 const DemoContext = createContext<DemoCtx | null>(null);
@@ -36,6 +45,8 @@ export function useDemoContext() {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 let _nextId = 9000;
+let _nextCartaoId = 100;
+let _nextCatId = 100;
 
 function enrich(tx: DemoTx, cartoes: DemoCartao[], categorias: DemoCategoria[]) {
   return {
@@ -121,6 +132,9 @@ function filterTransacoes(
 export default function DemoProvider({ children }: { children: React.ReactNode }) {
   const [transacoes, setTransacoes] = useState<DemoTx[]>(DEMO_TRANSACOES_INICIAIS);
   const [rendas, setRendas] = useState<Record<string, number>>(DEMO_RENDAS_INICIAIS);
+  const [cartoesState, setCartoes] = useState<DemoCartao[]>(DEMO_CARTOES);
+  const [categoriasState, setCategorias] = useState<DemoCategoria[]>(DEMO_CATEGORIAS);
+  const [fixasConfigs, setFixasConfigs] = useState<Record<string, boolean>>({});
 
   const addTransacao = useCallback((payload: AddTxPayload) => {
     const now = new Date();
@@ -151,6 +165,16 @@ export default function DemoProvider({ children }: { children: React.ReactNode }
     setTransacoes(prev => prev.map(t => t.id === id ? { ...t, ...payload } : t));
   }, []);
 
+  const batchUpdateTransacoes = useCallback((updates: Array<{ id: number; payload: Partial<DemoTx> }>) => {
+    setTransacoes(prev => {
+      let result = prev;
+      for (const { id, payload } of updates) {
+        result = result.map(t => t.id === id ? { ...t, ...payload } : t);
+      }
+      return result;
+    });
+  }, []);
+
   const deleteTransacao = useCallback((id: number) => {
     setTransacoes(prev => prev.filter(t => t.id !== id));
   }, []);
@@ -159,25 +183,62 @@ export default function DemoProvider({ children }: { children: React.ReactNode }
     setRendas(prev => ({ ...prev, [`${ano}-${mes}`]: renda }));
   }, []);
 
+  const setFixaAtiva = useCallback((descricao: string, ativa: boolean) => {
+    setFixasConfigs(prev => ({ ...prev, [descricao.toLowerCase()]: ativa }));
+  }, []);
+
+  const addCartao = useCallback((cartao: Omit<DemoCartao, 'id'>) => {
+    setCartoes(prev => [...prev, { ...cartao, id: _nextCartaoId++ }]);
+  }, []);
+
+  const updateCartao = useCallback((id: number, payload: Partial<DemoCartao>) => {
+    setCartoes(prev => prev.map(c => c.id === id ? { ...c, ...payload } : c));
+  }, []);
+
+  const deleteCartao = useCallback((id: number) => {
+    setCartoes(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  const addCategoria = useCallback((cat: Omit<DemoCategoria, 'id'>) => {
+    setCategorias(prev => [...prev, { ...cat, id: _nextCatId++ }]);
+  }, []);
+
+  const updateCategoria = useCallback((id: number, payload: Partial<DemoCategoria>) => {
+    setCategorias(prev => prev.map(c => c.id === id ? { ...c, ...payload } : c));
+  }, []);
+
+  const deleteCategoria = useCallback((id: number) => {
+    setCategorias(prev => prev.filter(c => c.id !== id));
+  }, []);
+
   const computeDashboardCtx = useCallback((ano: number, mes: number) => {
     const renda = rendas[`${ano}-${mes}`] ?? 0;
-    return computeDashboard(transacoes, DEMO_CARTOES, DEMO_CATEGORIAS, ano, mes, renda);
-  }, [transacoes, rendas]);
+    return computeDashboard(transacoes, cartoesState, categoriasState, ano, mes, renda);
+  }, [transacoes, rendas, cartoesState, categoriasState]);
 
   const getTransacoes = useCallback((filters: { mes?: string; busca?: string; tipo?: string; cartao_id?: string }) => {
-    return filterTransacoes(transacoes, DEMO_CARTOES, DEMO_CATEGORIAS, filters);
-  }, [transacoes]);
+    return filterTransacoes(transacoes, cartoesState, categoriasState, filters);
+  }, [transacoes, cartoesState, categoriasState]);
 
   return (
     <DemoContext.Provider value={{
-      cartoes: DEMO_CARTOES,
-      categorias: DEMO_CATEGORIAS,
+      cartoes: cartoesState,
+      categorias: categoriasState,
+      fixasConfigs,
       computeDashboard: computeDashboardCtx,
       getTransacoes,
       addTransacao,
       updateTransacao,
+      batchUpdateTransacoes,
       deleteTransacao,
       setRenda,
+      setFixaAtiva,
+      addCartao,
+      updateCartao,
+      deleteCartao,
+      addCategoria,
+      updateCategoria,
+      deleteCategoria,
     }}>
       {children}
     </DemoContext.Provider>
