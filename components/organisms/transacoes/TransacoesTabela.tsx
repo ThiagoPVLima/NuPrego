@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Aba } from './TransacoesTabs';
 import styles from './TransacoesTabela.module.css';
+import LoadingOverlay from '@/components/atoms/LoadingOverlay';
 
 interface Props {
   aba: Aba;
@@ -31,7 +32,7 @@ export default function TransacoesTabela({ aba, loading, emptyLabel, children }:
           <span>DATA</span>
         </div>
         {loading ? (
-          <div className={styles.loading}>carregando...</div>
+          <LoadingOverlay />
         ) : React.Children.count(children) === 0 ? (
           <div className={styles.empty}>{emptyLabel}</div>
         ) : children}
