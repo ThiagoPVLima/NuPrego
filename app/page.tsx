@@ -9,6 +9,7 @@ import {
   FixasCard, ParcelasCard, ListModal, FiltroModal, RendaModal,
 } from '@/components/organisms/dashboard';
 import Button from '@/components/atoms/Button';
+import LoadingOverlay from '@/components/atoms/LoadingOverlay';
 
 type FiltroTipo = { tipo: 'cartao' | 'categoria'; key: string; label: string };
 
@@ -60,11 +61,7 @@ export default function Dashboard() {
     setMes(m); setAno(a);
   };
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ color: 'var(--outline)', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
-    </div>
-  );
+  if (loading) return <LoadingOverlay />;
 
   if (erroLoad) return (
     <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)', marginTop: '32px' }}>

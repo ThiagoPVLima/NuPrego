@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fmt } from '@/lib/format';
 import Button from '@/components/atoms/Button';
+import LoadingOverlay from '@/components/atoms/LoadingOverlay';
 
 const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const fmtBar = (v: number) => {
@@ -149,7 +150,7 @@ export default function Historico() {
         </div>
       )}
       {loading ? (
-        <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>carregando...</div>
+        <LoadingOverlay />
       ) : (
         <>
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>

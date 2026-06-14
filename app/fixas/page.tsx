@@ -9,6 +9,7 @@ import CustomDateInput from '@/components/molecules/CustomDateInput';
 import ModalBase from '@/components/organisms/ModalBase';
 import NovaTransacaoModal from '@/components/organisms/NovaTransacaoModal';
 import Button from '@/components/atoms/Button';
+import LoadingOverlay from '@/components/atoms/LoadingOverlay';
 
 const limiteAtiva = (() => {
   const d = new Date();
@@ -306,9 +307,7 @@ export default function Fixas() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: 'var(--outline)', padding: '60px', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}>
-          carregando...
-        </div>
+        <LoadingOverlay />
       ) : erroLoad ? (
         <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--outline)' }}>{erroLoad}</div>
       ) : filtradas.length === 0 ? (
