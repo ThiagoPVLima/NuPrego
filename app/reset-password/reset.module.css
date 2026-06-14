@@ -1,0 +1,177 @@
+.root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--surface);
+  z-index: 999;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-card, var(--surface-low));
+  border: 1px solid var(--clay-border);
+  border-radius: 28px;
+  padding: 40px 36px 36px;
+  box-shadow: var(--clay-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: cardIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+}
+
+.heading {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--outline);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--outline);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--clay-input-bg);
+  border: 1.5px solid var(--clay-input-border);
+  border-radius: 14px;
+  padding: 13px 16px;
+  color: var(--on-surface);
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: var(--clay-input-shadow);
+}
+
+.input:focus {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(70, 72, 216, 0.14);
+}
+
+.eyeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--outline);
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.eyeBtn:hover {
+  color: var(--on-surface);
+  background: var(--surface-high);
+}
+
+.errorMsg {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  font-size: 13px;
+}
+
+.btn {
+  width: 100%;
+  background: linear-gradient(135deg, #6668f2 0%, #4648d8 100%);
+  border: none;
+  border-radius: 14px;
+  padding: 15px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Manrope', sans-serif;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 8px 28px rgba(70, 72, 216, 0.45);
+  margin-top: 4px;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.success {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.success strong { display: block; margin-bottom: 4px; font-weight: 600; }
+.success p { margin: 0; opacity: 0.85; font-size: 13px; }
+
+.successIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+@media (max-width: 480px) {
+  .card { padding: 32px 24px 28px; border-radius: 24px; }
+  .heading { font-size: 20px; }
+}
