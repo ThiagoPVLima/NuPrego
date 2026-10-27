@@ -13,4 +13,6 @@
 
 .data > :first-child { flex: 1; }
 
+.erro { color: var(--color-danger); font-size: 13px; }
+
 .acoes { display: flex; gap: 10px; }

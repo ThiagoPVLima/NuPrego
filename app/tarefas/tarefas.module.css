@@ -39,3 +39,5 @@
   background: rgba(248, 113, 113, 0.12);
   font-size: 13px;
 }
+
+.acoes { display: flex; align-items: center; gap: 10px; }
