@@ -1,0 +1,15 @@
+.pagina { max-width: 520px; }
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 24px;
+}
+
+.restam { color: var(--outline); font-size: 12px; }
+.titulo { color: var(--on-surface); font-size: 22px; font-weight: 600; margin: 0; }
+
+.botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.erro { color: var(--color-danger); font-size: 13px; }

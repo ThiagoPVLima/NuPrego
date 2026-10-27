@@ -1,0 +1,61 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--outline-variant);
+  list-style: none;
+}
+
+.check {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--outline);
+  background: transparent;
+  color: var(--secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check:hover { border-color: var(--secondary); }
+
+.corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titulo { color: var(--on-surface); font-size: 15px; }
+.tituloFeito { color: var(--outline); font-size: 15px; text-decoration: line-through; }
+
+.meta { display: flex; gap: 8px; font-size: 12px; }
+.tag { color: var(--primary); }
+.prazo { color: var(--outline); }
+.prazoUrgente { color: var(--color-danger); font-weight: 600; }
+
+.mover {
+  flex: none;
+  width: auto;
+  padding: 6px 28px 6px 10px;
+  font-size: 12px;
+}
+
+.apagar {
+  flex: none;
+  background: transparent;
+  border: none;
+  color: var(--outline);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px;
+}
+
+.apagar:hover { color: var(--color-danger); }

@@ -13,6 +13,7 @@ const links = [
   { href: '/', label: 'Dashboard', icon: '◉' },
   { href: '/transacoes', label: 'Transações', icon: '↕' },
   { href: '/cartoes', label: 'Cartões', icon: '▣' },
+  { href: '/tarefas', label: 'Tarefas', icon: '☑' },
   { href: '/parcelados', label: 'Parcelados', icon: '⊞' },
   { href: '/fixas', label: 'Fixas', icon: '↻' },
   { href: '/historico', label: 'Histórico', icon: '◎' },
@@ -21,6 +22,7 @@ const links = [
 
 const bottomLinks = [
   { href: '/', label: 'Início', icon: '◉' },
+  { href: '/tarefas', label: 'Tarefas', icon: '☑' },
   { href: '/transacoes', label: 'Transações', icon: '↕' },
   { href: '/parcelados', label: 'Parcelados', icon: '⊞' },
   { href: '/fixas', label: 'Fixas', icon: '↻' },
