@@ -1,0 +1,16 @@
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.data {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.data > :first-child { flex: 1; }
+
+.acoes { display: flex; gap: 10px; }
