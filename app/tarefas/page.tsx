@@ -6,9 +6,13 @@ import { TarefaCaptura } from '@/components/organisms/tarefas';
 import { ESTADOS, LIMITE_AGORA, type EstadoTarefa, type Tarefa } from '@/lib/tarefas';
 import styles from './tarefas.module.css';
 
+type Aba = EstadoTarefa | 'todas';
+
+const ORDEM_ABERTAS: EstadoTarefa[] = ['agora', 'inbox', 'em_breve', 'algum_dia'];
+
 export default function Tarefas() {
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
-  const [aba, setAba] = useState<EstadoTarefa>('agora');
+  const [aba, setAba] = useState<Aba>('agora');
   const [erro, setErro] = useState('');
 
   const load = useCallback(async () => {
@@ -37,7 +41,8 @@ export default function Tarefas() {
   };
 
   const contar = (e: EstadoTarefa) => tarefas.filter(t => t.estado === e).length;
-  const lista = tarefas.filter(t => t.estado === aba);
+  const abertas = ORDEM_ABERTAS.flatMap(e => tarefas.filter(t => t.estado === e));
+  const lista = aba === 'todas' ? abertas : tarefas.filter(t => t.estado === aba);
   const inbox = contar('inbox');
 
   return (
@@ -53,7 +58,7 @@ export default function Tarefas() {
       <TarefaCaptura onAdicionar={adicionar} />
 
       <div className={styles.abas} role="tablist">
-        {ESTADOS.map(e => (
+        {[{ id: 'todas' as const, label: 'Todas', total: abertas.length }, ...ESTADOS.map(e => ({ ...e, total: contar(e.id) }))].map(e => (
           <button
             key={e.id}
             type="button"
@@ -62,7 +67,7 @@ export default function Tarefas() {
             className={aba === e.id ? styles.abaAtiva : styles.aba}
             onClick={() => setAba(e.id)}
           >
-            {e.label} <span className={styles.contagem}>{contar(e.id)}</span>
+            {e.label} <span className={styles.contagem}>{e.total}</span>
           </button>
         ))}
       </div>
