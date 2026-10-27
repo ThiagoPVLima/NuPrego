@@ -4,6 +4,7 @@ import styles from './TarefaItem.module.css';
 interface Props {
   tarefa: Tarefa;
   onMover: (estado: EstadoTarefa) => void;
+  onEditar: () => void;
   onApagar: () => void;
 }
 
@@ -14,7 +15,7 @@ function textoPrazo(dias: number) {
   return `em ${dias}d`;
 }
 
-export default function TarefaItem({ tarefa, onMover, onApagar }: Props) {
+export default function TarefaItem({ tarefa, onMover, onEditar, onApagar }: Props) {
   const dias = diasAteLimite(tarefa.data_limite);
   const feita = tarefa.estado === 'feito';
 
@@ -29,7 +30,7 @@ export default function TarefaItem({ tarefa, onMover, onApagar }: Props) {
         {feita ? '✓' : ''}
       </button>
 
-      <div className={styles.corpo}>
+      <div className={styles.corpo} onClick={onEditar} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') onEditar(); }}>
         <span className={feita ? styles.tituloFeito : styles.titulo}>{tarefa.titulo}</span>
         {(tarefa.contexto || dias !== null) && (
           <span className={styles.meta}>
