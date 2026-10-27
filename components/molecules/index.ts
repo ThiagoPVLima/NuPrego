@@ -6,3 +6,4 @@ export { default as CustomDateInput } from './CustomDateInput';
 export { default as CatMultiSelect } from './CatMultiSelect';
 export { default as TransactionListItem } from './TransactionListItem';
 export { default as ConfirmarModal } from './ConfirmarModal';
+export { default as TarefaItem } from './TarefaItem';
