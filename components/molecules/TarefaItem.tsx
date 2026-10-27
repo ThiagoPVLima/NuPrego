@@ -6,6 +6,8 @@ interface Props {
   onMover: (estado: EstadoTarefa) => void;
   onEditar: () => void;
   onApagar: () => void;
+  onSubir?: () => void;
+  onDescer?: () => void;
 }
 
 function textoPrazo(dias: number) {
@@ -15,7 +17,7 @@ function textoPrazo(dias: number) {
   return `em ${dias}d`;
 }
 
-export default function TarefaItem({ tarefa, onMover, onEditar, onApagar }: Props) {
+export default function TarefaItem({ tarefa, onMover, onEditar, onApagar, onSubir, onDescer }: Props) {
   const dias = diasAteLimite(tarefa.data_limite);
   const feita = tarefa.estado === 'feito';
 
@@ -42,6 +44,12 @@ export default function TarefaItem({ tarefa, onMover, onEditar, onApagar }: Prop
         )}
       </div>
 
+      {(onSubir || onDescer) && (
+        <div className={styles.ordem}>
+          <button type="button" aria-label="Subir" disabled={!onSubir} onClick={onSubir}>▲</button>
+          <button type="button" aria-label="Descer" disabled={!onDescer} onClick={onDescer}>▼</button>
+        </div>
+      )}
       <select
         className={styles.mover}
         value={tarefa.estado}

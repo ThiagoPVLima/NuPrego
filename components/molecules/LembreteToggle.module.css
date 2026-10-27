@@ -1,0 +1,13 @@
+.linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+}
+
+.texto { color: var(--on-surface-muted); font-size: 13px; }
+.aviso { color: var(--outline); font-size: 12px; margin: 0 0 16px; }

@@ -30,3 +30,15 @@ export function diasAteLimite(data: string | null, hoje = new Date()): number | 
   const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
   return Math.round((alvo - base) / 86400000);
 }
+
+export function ordenarTarefas(lista: Tarefa[]): Tarefa[] {
+  return [...lista].sort((a, b) => {
+    if (a.ordem !== b.ordem) return a.ordem - b.ordem;
+    if (a.data_limite !== b.data_limite) {
+      if (!a.data_limite) return 1;
+      if (!b.data_limite) return -1;
+      return a.data_limite.localeCompare(b.data_limite);
+    }
+    return b.criado_em.localeCompare(a.criado_em);
+  });
+}

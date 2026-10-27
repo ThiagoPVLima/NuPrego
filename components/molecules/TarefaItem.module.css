@@ -60,3 +60,18 @@
 }
 
 .apagar:hover { color: var(--color-danger); }
+
+.ordem { flex: none; display: flex; flex-direction: column; }
+
+.ordem button {
+  background: transparent;
+  border: none;
+  color: var(--outline);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  padding: 4px 6px;
+}
+
+.ordem button:hover:not(:disabled) { color: var(--primary); }
+.ordem button:disabled { opacity: 0.25; cursor: default; }

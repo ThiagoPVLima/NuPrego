@@ -27,8 +27,9 @@ export default async function middleware(request: NextRequest) {
 
   const isLoginPage = request.nextUrl.pathname === '/login';
   const isDemoPage = request.nextUrl.pathname.startsWith('/demo');
+  const isCron = request.nextUrl.pathname.startsWith('/api/cron/');
 
-  if (!user && !isLoginPage && !isDemoPage) {
+  if (!user && !isLoginPage && !isDemoPage && !isCron) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
