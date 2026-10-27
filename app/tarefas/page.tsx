@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { TarefaItem } from '@/components/molecules';
-import { TarefaCaptura, TarefaEditarModal } from '@/components/organisms/tarefas';
+import Button from '@/components/atoms/Button';
+import { TarefaModal, type DadosTarefa } from '@/components/organisms/tarefas';
 import { ESTADOS, LIMITE_AGORA, type EstadoTarefa, type Tarefa } from '@/lib/tarefas';
 import styles from './tarefas.module.css';
 
@@ -14,7 +15,7 @@ export default function Tarefas() {
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [aba, setAba] = useState<Aba>('agora');
   const [erro, setErro] = useState('');
-  const [editando, setEditando] = useState<Tarefa | null>(null);
+  const [modal, setModal] = useState<{ tarefa?: Tarefa } | null>(null);
 
   const load = useCallback(async () => {
     const r = await fetch('/api/tarefas');
@@ -23,23 +24,25 @@ export default function Tarefas() {
 
   useEffect(() => { load(); }, [load]);
 
-  const adicionar = async (titulo: string) => {
-    await fetch('/api/tarefas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo }) });
-    setAba('inbox');
+  const salvar = async (dados: DadosTarefa): Promise<string | null> => {
+    const tarefa = modal?.tarefa;
+    const corpo = tarefa && dados.estado === tarefa.estado ? { ...dados, estado: undefined } : dados;
+    const r = await fetch(tarefa ? `/api/tarefas/${tarefa.id}` : '/api/tarefas', {
+      method: tarefa ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+    if (!r.ok) return (await r.json()).error ?? 'Erro ao salvar';
+    if (!tarefa) setAba(dados.estado);
+    setModal(null);
     load();
+    return null;
   };
 
   const mover = async (id: number, estado: EstadoTarefa) => {
     setErro('');
     const r = await fetch(`/api/tarefas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }) });
     if (!r.ok) setErro((await r.json()).error ?? 'Erro ao mover');
-    load();
-  };
-
-  const salvarEdicao = async (dados: Pick<Tarefa, 'titulo' | 'contexto' | 'data_limite'>) => {
-    if (!editando) return;
-    await fetch(`/api/tarefas/${editando.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
-    setEditando(null);
     load();
   };
 
@@ -60,10 +63,11 @@ export default function Tarefas() {
           <h1 className="page-title">Tarefas</h1>
           <div className={styles.sub}>Agora: {contar('agora')}/{LIMITE_AGORA}</div>
         </div>
-        {inbox > 0 && <Link href="/tarefas/revisao" className="btn-secondary">Revisar inbox ({inbox})</Link>}
+        <div className={styles.acoes}>
+          {inbox > 0 && <Link href="/tarefas/revisao" className="btn-secondary">Revisar inbox ({inbox})</Link>}
+          <Button onClick={() => setModal({})}>+ Nova tarefa</Button>
+        </div>
       </div>
-
-      <TarefaCaptura onAdicionar={adicionar} />
 
       <div className={styles.abas} role="tablist">
         {[{ id: 'todas' as const, label: 'Todas', total: abertas.length }, ...ESTADOS.map(e => ({ ...e, total: contar(e.id) }))].map(e => (
@@ -85,12 +89,17 @@ export default function Tarefas() {
       <ul className={`card ${styles.lista}`}>
         {lista.length === 0 && <li className={styles.vazio}>Nada aqui.</li>}
         {lista.map(t => (
-          <TarefaItem key={t.id} tarefa={t} onMover={estado => mover(t.id, estado)} onEditar={() => setEditando(t)} onApagar={() => apagar(t.id)} />
+          <TarefaItem key={t.id} tarefa={t} onMover={estado => mover(t.id, estado)} onEditar={() => setModal({ tarefa: t })} onApagar={() => apagar(t.id)} />
         ))}
       </ul>
 
-      {editando && (
-        <TarefaEditarModal tarefa={editando} onSalvar={salvarEdicao} onFechar={() => setEditando(null)} />
+      {modal && (
+        <TarefaModal
+          tarefa={modal.tarefa}
+          estadoInicial={aba === 'todas' || aba === 'feito' ? 'inbox' : aba}
+          onSalvar={salvar}
+          onFechar={() => setModal(null)}
+        />
       )}
     </div>
   );

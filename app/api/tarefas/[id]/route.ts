@@ -7,8 +7,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   const { id } = await context.params;
   const { titulo, estado, contexto, data_limite, ordem } = await req.json();
 
+  if (titulo !== undefined && !titulo?.trim()) return NextResponse.json({ error: 'titulo obrigatorio' }, { status: 400 });
+
   const patch: Record<string, unknown> = {};
-  if (titulo !== undefined) patch.titulo = titulo;
+  if (titulo !== undefined) patch.titulo = titulo.trim();
   if (contexto !== undefined) patch.contexto = contexto;
   if (data_limite !== undefined) patch.data_limite = data_limite;
   if (ordem !== undefined) patch.ordem = ordem;

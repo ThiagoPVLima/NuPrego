@@ -1,2 +1,2 @@
-export { default as TarefaCaptura } from './TarefaCaptura';
-export { default as TarefaEditarModal } from './TarefaEditarModal';
+export { default as TarefaModal } from './TarefaModal';
+export type { DadosTarefa } from './TarefaModal';
